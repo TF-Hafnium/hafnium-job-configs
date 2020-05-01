@@ -1,0 +1,31 @@
+- job:
+    name: hafnium-build-test-review
+    project-type: freestyle
+    defaults: global
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          nums-to-keep: 90
+    disabled: false
+    node: docker-amd64-xenial
+    display-name: 'Hafnium builder'
+    triggers:
+      - gerrit:
+          server-name: 'review.trustedfirmware.org'
+          trigger-on:
+            - patchset-created-event
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: 'hafnium/hafnium'
+              branches:
+                - branch-pattern: 'master'
+    wrappers:
+      - timestamps
+    builders:
+      - shell: |
+        #!/bin/bash
+
+        set -xe
+
+        echo "######## Hafnium Test: Hello, World! #########"
+        exit 0

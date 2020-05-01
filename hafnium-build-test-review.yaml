@@ -23,9 +23,33 @@
       - timestamps
     builders:
       - shell: |
-        #!/bin/bash
+          #!/bin/bash
 
-        set -xe
+          set -xe
 
-        echo "########  Hafnium Test: Hello, World!  #########"
-        exit 0
+          HAFNIUM_BUILD_DIR="${WORKSPACE}/hafnium"
+
+          if [[ -e "${HAFNIUM_BUILD_DIR}/.git" ]]; then
+            # If the repository exists make sure it is clean.
+            cd "${HAFNIUM_BUILD_DIR}"
+            git clean -fd
+            git reset --hard
+            # Update the submodules.
+            git submodule update
+          else
+            # If it does not exist clone it.
+            rm -rf "${HAFNIUM_BUILD_DIR}"
+            git clone --recurse-submodules "https://review.trustedfirmware.org/hafnium/hafnium" \
+                      "${HAFNIUM_BUILD_DIR}"
+            cd "${HAFNIUM_BUILD_DIR}"
+          fi
+
+          # Try to apply patch.
+          if ! { git fetch "http://${GERRIT_HOST}/${GERRIT_PROJECT}" "${GERRIT_REFSPEC}" &&
+                git checkout FETCH_HEAD; }; then
+            git reset --hard
+            echo "Applying patch FAILED"
+            exit 1
+          fi
+
+          kokoro/build.sh

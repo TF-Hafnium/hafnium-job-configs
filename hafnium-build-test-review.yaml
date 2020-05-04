@@ -27,5 +27,5 @@
 
         set -xe
 
-        echo "######## Hafnium Test: Hello, World! #########"
+        echo "########  Hafnium Test: Hello, World!  #########"
         exit 0

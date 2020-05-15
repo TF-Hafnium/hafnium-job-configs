@@ -1,3 +1,23 @@
+- scm:
+    name: hafnium
+    scm:
+        - git:
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
+            name: origin
+            branches:
+                - ${GERRIT_BRANCH}
+            basedir: hafnium
+            skip-tag: true
+            shallow-clone: true
+            wipe-workspace: true
+            submodule:
+                disable: false
+                recursive: true
+                tracking: false
+                parent-credentials: true
+                timeout: 15
+
 - job:
     name: hafnium-build-test-review
     project-type: freestyle
@@ -19,6 +39,8 @@
               project-pattern: 'hafnium/hafnium'
               branches:
                 - branch-pattern: 'master'
+    scm:
+        - hafnium
     wrappers:
       - timestamps
     builders:
@@ -27,29 +49,6 @@
 
           set -xe
 
-          HAFNIUM_BUILD_DIR="${WORKSPACE}/hafnium"
-
-          if [[ -e "${HAFNIUM_BUILD_DIR}/.git" ]]; then
-            # If the repository exists make sure it is clean.
-            cd "${HAFNIUM_BUILD_DIR}"
-            git clean -fd
-            git reset --hard
-            # Update the submodules.
-            git submodule update
-          else
-            # If it does not exist clone it.
-            rm -rf "${HAFNIUM_BUILD_DIR}"
-            git clone --recurse-submodules "https://review.trustedfirmware.org/hafnium/hafnium" \
-                      "${HAFNIUM_BUILD_DIR}"
-            cd "${HAFNIUM_BUILD_DIR}"
-          fi
-
-          # Try to apply patch.
-          if ! { git fetch "http://${GERRIT_HOST}/${GERRIT_PROJECT}" "${GERRIT_REFSPEC}" &&
-                git checkout FETCH_HEAD; }; then
-            git reset --hard
-            echo "Applying patch FAILED"
-            exit 1
-          fi
+          cd ${WORKSPACE}/hafnium
 
           kokoro/build.sh

@@ -27,7 +27,7 @@
           days-to-keep: 90
           nums-to-keep: 90
     disabled: false
-    node: docker-amd64-xenial
+    node: docker-amd64-hafnium
     display-name: 'Hafnium builder'
     triggers:
       - gerrit:

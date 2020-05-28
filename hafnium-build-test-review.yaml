@@ -49,7 +49,6 @@
           #!/bin/bash
 
           set -xe
-          env
 
           cd ${WORKSPACE}/hafnium
 

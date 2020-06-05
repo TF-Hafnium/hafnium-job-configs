@@ -1,24 +1,3 @@
-- scm:
-    name: hafnium
-    scm:
-        - git:
-            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
-            refspec: ${GERRIT_REFSPEC}
-            name: origin
-            branches:
-                - ${GERRIT_BRANCH}
-            choosing-strategy: gerrit
-            basedir: hafnium
-            skip-tag: true
-            shallow-clone: true
-            wipe-workspace: true
-            submodule:
-                disable: false
-                recursive: true
-                tracking: false
-                parent-credentials: true
-                timeout: 15
-
 - job:
     name: hafnium-build-test-review
     project-type: freestyle
@@ -26,10 +5,32 @@
     properties:
       - build-discarder:
           days-to-keep: 90
-          nums-to-keep: 90
+          num-to-keep: 90
+#    parameters:
+#        - string:
+#            name: GERRIT_PROJECT
+#            default: 'hafnium/hafnium'
+#        - string:
+#            name: GERRIT_BRANCH
+#            default: 'master'
+#        - string:
+#            name: GERRIT_REFSPEC
+#            default: 'refs/heads/master'
     disabled: false
     node: docker-amd64-hafnium
     display-name: 'Hafnium builder'
+    scm:
+        - git:
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
+            name: origin
+            branches:
+                - ${GERRIT_BRANCH}
+            skip-tag: true
+            shallow-clone: true
+            wipe-workspace: false
+            submodule:
+                recursive: true
     triggers:
       - gerrit:
           server-name: 'review.trustedfirmware.org'
@@ -40,16 +41,16 @@
               project-pattern: 'hafnium/hafnium'
               branches:
                 - branch-pattern: 'master'
-    scm:
-        - hafnium
+#            silent: false
+#            silent-start: true
     wrappers:
-      - timestamps
+        - timestamps
+        - build-name:
+            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
     builders:
       - shell: |
           #!/bin/bash
 
-          set -xe
-
-          cd ${WORKSPACE}/hafnium
+          set -ex
 
           kokoro/build.sh

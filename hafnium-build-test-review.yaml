@@ -48,9 +48,12 @@
         - build-name:
             name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
     builders:
-      - shell: |
-          #!/bin/bash
+        - shell: |
+            #!/bin/bash
 
-          set -ex
+            set -ex
 
-          kokoro/build.sh
+            kokoro/build.sh
+    publishers:
+        - archive:
+            artifacts: 'out/**/kokoro_log/**/sponge_log.*'

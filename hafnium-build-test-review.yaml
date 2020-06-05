@@ -57,3 +57,5 @@
     publishers:
         - archive:
             artifacts: 'out/**/kokoro_log/**/sponge_log.*'
+        - junit:
+            results: 'out/**/kokoro_log/**/sponge_log.xml'

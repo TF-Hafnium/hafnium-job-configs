@@ -35,6 +35,8 @@
     triggers:
       - gerrit:
           server-name: 'review.trustedfirmware.org'
+          gerrit-build-successful-verified-value: 1
+          gerrit-build-failed-verified-value: -1
           trigger-on:
             - patchset-created-event
           projects:

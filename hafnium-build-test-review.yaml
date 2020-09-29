@@ -45,6 +45,9 @@
           gerrit-build-successful-codereview-value: 0
           gerrit-build-failed-codereview-value: 0
           trigger-on:
+            - comment-added-event:
+                approval-category: 'Allow-CI'
+                approval-value: '1'
             - patchset-created-event
           projects:
             - project-compare-type: 'PLAIN'

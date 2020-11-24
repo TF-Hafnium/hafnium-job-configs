@@ -31,7 +31,7 @@
 #            name: GERRIT_REFSPEC
 #            default: 'refs/heads/master'
     disabled: false
-    node: docker-amd64-hafnium
+    node: docker-amd64-hafnium-bionic
     display-name: 'Hafnium builder'
     scm:
         - git:

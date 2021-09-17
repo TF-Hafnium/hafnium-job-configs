@@ -1,0 +1,83 @@
+- job:
+    name: hafnium-spmc-test-fvp
+    project-type: freestyle
+    defaults: global
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          num-to-keep: 90
+      - authorization:
+          anonymous:
+           - job-read
+           - job-extended-read
+          qwandor-google:
+            - job-read
+            - job-extended-read
+            - job-build
+            - job-cancel
+          olivier.deprez:
+            - job-read
+            - job-extended-read
+            - job-build
+            - job-cancel
+    parameters:
+        - string:
+            name: FVP_MODEL_ARCHIVE_NAME
+            default: 'FVP_Base_RevC-2xAEMvA_11.16_16.tgz'
+        - string:
+            name: FVP_MODEL_URL
+            default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
+    disabled: false
+    node: docker-amd64-hafnium-bionic
+    concurrent: true
+    display-name: 'Hafnium builder (FVP)'
+    scm:
+        - git:
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
+            name: origin
+            branches:
+                - ${GERRIT_BRANCH}
+            choosing-strategy: gerrit
+            skip-tag: true
+            shallow-clone: true
+            wipe-workspace: false
+            submodule:
+                recursive: true
+    triggers:
+      - gerrit:
+          server-name: 'review.trustedfirmware.org'
+          # For now, just silently run the FVP tests, do not vote on result.
+          trigger-on:
+            - comment-added-event:
+                approval-category: 'Allow-CI'
+                approval-value: '1'
+            - patchset-created-event
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: 'hafnium/hafnium'
+              branches:
+                - branch-pattern: 'master'
+    wrappers:
+        - timestamps
+        - build-name:
+            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+    builders:
+        - shell: |
+            #!/bin/bash
+
+            set -ex
+
+            mkdir ${WORKSPACE}/fvp
+            pushd ${WORKSPACE}/fvp
+            wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
+            tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
+            popd
+            make PROJECT=reference
+            kokoro/test_spmc.sh
+            kokoro/test.sh --fvp
+    publishers:
+        - archive:
+            artifacts: 'out/**/kokoro_log/**/sponge_log.*'
+        - junit:
+            results: 'out/**/kokoro_log/**/sponge_log.xml'

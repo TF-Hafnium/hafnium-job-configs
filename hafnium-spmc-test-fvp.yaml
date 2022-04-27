@@ -68,14 +68,14 @@
 
             set -ex
 
-            mkdir ${WORKSPACE}/fvp
-            pushd ${WORKSPACE}/fvp
+            mkdir ${WORKSPACE}/../fvp
+            pushd ${WORKSPACE}/../fvp
             wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
+            PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference
             kokoro/test_spmc.sh
-            kokoro/test.sh --fvp
     publishers:
         - archive:
             artifacts: 'out/**/kokoro_log/**/sponge_log.*'

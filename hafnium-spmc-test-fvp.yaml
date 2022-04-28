@@ -23,12 +23,12 @@
     parameters:
         - string:
             name: FVP_MODEL_ARCHIVE_NAME
-            default: 'FVP_Base_RevC-2xAEMvA_11.16_16.tgz'
+            default: 'FVP_Base_RevC-2xAEMvA_11.17_21.tgz'
         - string:
             name: FVP_MODEL_URL
             default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
     disabled: false
-    node: docker-amd64-hafnium-bionic
+    node: docker-amd64-hafnium-focal
     concurrent: true
     display-name: 'Hafnium builder (FVP)'
     scm:

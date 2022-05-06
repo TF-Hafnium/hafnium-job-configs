@@ -1,0 +1,94 @@
+- scm:
+    name: trusted-firmware-a
+    scm:
+      - git:
+          url: https://review.trustedfirmware.org/TF-A/trusted-firmware-a
+          refspec: ${TFA_REFSPEC}
+          name: origin
+          branches:
+              - refs/heads/master
+          basedir: trusted-firmware-a
+          skip-tag: true
+          shallow-clone: true
+          wipe-workspace: false
+- scm:
+    name: hafnium
+    scm:
+      - git:
+          url: https://review.trustedfirmware.org/hafnium/hafnium
+          refspec: ${HF_REFSPEC}
+          name: origin
+          branches:
+            - refs/heads/master
+          choosing-strategy: gerrit
+          skip-tag: true
+          shallow-clone: true
+          wipe-workspace: false
+          submodule:
+              recursive: true
+- scm:
+    name: ffa-acs
+    scm:
+      - git:
+          url: https://github.com/ARM-software/ff-a-acs
+          refspec: ${ACS_REFSPEC}
+          name: origin
+          branches:
+              - refs/heads/master
+          basedir: ff-a-acs
+          skip-tag: true
+          shallow-clone: true
+          wipe-workspace: false
+- job:
+    name: hafnium-acs-test
+    display-name: 'TF-A FF-A ACS'
+    node: docker-amd64-hafnium-focal
+    project-type: freestyle
+    concurrent: true
+    disabled: false
+    description: ACS compliance tests for Hafnium
+    defaults: global
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          num-to-keep: 90
+      - authorization:
+          !include: authorization.yaml.inc
+    parameters:
+      - string:
+          name: TFA_REFSPEC
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - string:
+          name: HF_REFSPEC
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - string:
+          name: ACS_REFSPEC
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - string:
+          name: FVP_MODEL_ARCHIVE_NAME
+          default: 'FVP_Base_RevC-2xAEMvA_11.17_21.tgz'
+      - string:
+          name: FVP_MODEL_URL
+          default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
+    scm:
+      - trusted-firmware-a
+      - hafnium
+      - ffa-acs
+    wrappers:
+      - timestamps
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -ex
+
+          mkdir ${WORKSPACE}/../fvp
+          pushd ${WORKSPACE}/../fvp
+          wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
+          tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
+          popd
+
+          "${{WORKSPACE}}/hafnium-scripts/hafnium-acs-builder.sh"
+          "{{WORKSPACE}}/hafnium/kokoro/test_acs.sh"
+    publishers:
+        - archive:
+            artifacts: 'out/**/acs_log/**/*uart*'

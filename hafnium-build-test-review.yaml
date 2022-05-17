@@ -7,19 +7,7 @@
           days-to-keep: 90
           num-to-keep: 90
       - authorization:
-          anonymous:
-           - job-read
-           - job-extended-read
-          qwandor-google:
-            - job-read
-            - job-extended-read
-            - job-build
-            - job-cancel
-          olivier.deprez:
-            - job-read
-            - job-extended-read
-            - job-build
-            - job-cancel
+          !include: authorization.yaml.inc
 #    parameters:
 #        - string:
 #            name: GERRIT_PROJECT

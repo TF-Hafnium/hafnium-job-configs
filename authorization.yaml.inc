@@ -6,18 +6,19 @@
         - job-extended-read
         - job-build
         - job-cancel
-        olivier.deprez:
+        odeprez:
         - job-read
         - job-extended-read
         - job-build
         - job-cancel
-        maksims.svecovs:
+        max-shvetsov:
         - job-read
         - job-extended-read
         - job-build
         - job-cancel
-        joao.alves:
+        J-Alves:
         - job-read
         - job-extended-read
         - job-build
         - job-cancel
+

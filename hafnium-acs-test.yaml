@@ -34,7 +34,7 @@
           refspec: ${ACS_REFSPEC}
           name: origin
           branches:
-              - refs/heads/master
+              - refs/heads/main
           basedir: ff-a-acs
           skip-tag: true
           shallow-clone: true
@@ -52,8 +52,6 @@
       - build-discarder:
           days-to-keep: 90
           num-to-keep: 90
-      - authorization:
-          !include: authorization.yaml.inc
     parameters:
       - string:
           name: TFA_REFSPEC
@@ -63,7 +61,7 @@
           default: '+refs/heads/master:refs/remotes/origin/master'
       - string:
           name: ACS_REFSPEC
-          default: '+refs/heads/master:refs/remotes/origin/master'
+          default: '+refs/heads/main:refs/remotes/origin/main'
       - string:
           name: FVP_MODEL_ARCHIVE_NAME
           default: 'FVP_Base_RevC-2xAEMvA_11.17_21.tgz'
@@ -87,8 +85,8 @@
           tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
           popd
 
-          "${{WORKSPACE}}/hafnium-scripts/hafnium-acs-builder.sh"
-          "{{WORKSPACE}}/hafnium/kokoro/test_acs.sh"
+          ${WORKSPACE}/hafnium-scripts/hafnium-acs-builder.sh
+          ${WORKSPACE}/hafnium/kokoro/test_acs.sh
     publishers:
         - archive:
             artifacts: 'out/**/acs_log/**/*uart*'

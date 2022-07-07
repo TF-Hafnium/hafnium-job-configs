@@ -15,6 +15,10 @@
         - string:
             name: FVP_MODEL_URL
             default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
+        - bool:
+            name: RUN_ASSERT_DISABLED_BUILD
+            description: "Run tests with asserts disabled in addition to the asserts enabled build"
+            default: true
     disabled: false
     node: docker-amd64-hafnium-focal
     concurrent: true
@@ -66,8 +70,22 @@
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
-            make PROJECT=reference
+            make PROJECT=reference ENABLE_ASSERTIONS=1
             kokoro/test_spmc.sh
+
+            #
+            # Run also with asserts disabled if RUN_ASSERT_DISABLED_BUILD
+            # parameter is set.
+            # Call 'make clean' and remove args.gn file to ensure the value of
+            # enable_assertions is updated from the default.
+            #
+            if [ "$HAFNIUM_RUN_ASSERT_DISABLED_BUILD" == "true" ]
+            then
+              make clean
+              rm -f out/reference/build.ninja out/reference/args.gn
+              make PROJECT=reference ENABLE_ASSERTIONS=0
+              kokoro/test_spmc.sh
+            fi
     publishers:
         - archive:
             artifacts: 'out/**/kokoro_log/**/sponge_log.*'

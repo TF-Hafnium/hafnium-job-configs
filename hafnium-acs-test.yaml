@@ -8,6 +8,7 @@
           branches:
               - refs/heads/master
           basedir: trusted-firmware-a
+          choosing-strategy: gerrit
           skip-tag: true
           shallow-clone: true
           wipe-workspace: false
@@ -20,6 +21,7 @@
           name: origin
           branches:
             - refs/heads/master
+          basedir: hafnium
           choosing-strategy: gerrit
           skip-tag: true
           shallow-clone: true
@@ -27,7 +29,21 @@
           submodule:
               recursive: true
 - scm:
-    name: ffa-acs
+    name: hafnium-ci-scripts
+    scm:
+      - git:
+          url: https://review.trustedfirmware.org/ci/hafnium-ci-scripts
+          refspec: ${HF_CI_SCRIPT_REFSPEC}
+          name: origin
+          branches:
+              - refs/heads/master
+          basedir: hafnium-ci-scripts
+          choosing-strategy: gerrit
+          skip-tag: true
+          shallow-clone: true
+          wipe-workspace: false
+- scm:
+    name: ff-a-acs
     scm:
       - git:
           url: https://github.com/ARM-software/ff-a-acs
@@ -36,28 +52,27 @@
           branches:
               - refs/heads/main
           basedir: ff-a-acs
+          choosing-strategy: gerrit
           skip-tag: true
           shallow-clone: true
           wipe-workspace: false
 - job:
     name: hafnium-acs-test
-    display-name: 'TF-A FF-A ACS'
-    node: docker-amd64-hafnium-focal
-    project-type: freestyle
-    concurrent: true
-    disabled: false
     description: ACS compliance tests for Hafnium
-    defaults: global
+    node: docker-amd64-hafnium-focal
+    concurrent: true
     properties:
       - build-discarder:
           days-to-keep: 90
-          num-to-keep: 90
     parameters:
       - string:
           name: TFA_REFSPEC
           default: '+refs/heads/master:refs/remotes/origin/master'
       - string:
           name: HF_REFSPEC
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - string:
+          name: HF_CI_SCRIPT_REFSPEC
           default: '+refs/heads/master:refs/remotes/origin/master'
       - string:
           name: ACS_REFSPEC
@@ -71,9 +86,16 @@
     scm:
       - trusted-firmware-a
       - hafnium
-      - ffa-acs
+      - hafnium-ci-scripts
+      - ff-a-acs
     wrappers:
       - timestamps
+      - credentials-binding:
+        - ssh-user-private-key:
+            credential-id: TFA_CI_BOT_USER_SSH_KEY
+            key-file-variable: CI_BOT_KEY
+            username-variable: CI_BOT_USERNAME
+            passphrase-variable: ''
     builders:
       - shell: |
           #!/bin/bash
@@ -81,12 +103,11 @@
 
           mkdir ${WORKSPACE}/../fvp
           pushd ${WORKSPACE}/../fvp
-          wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
+          wget -q ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
           tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
           popd
-
-          ${WORKSPACE}/hafnium-scripts/hafnium-acs-builder.sh
-          ${WORKSPACE}/hafnium/kokoro/test_acs.sh
+          ${WORKSPACE}/hafnium-ci-scripts/acs/builder.sh
+          ${WORKSPACE}/hafnium-ci-scripts/acs/runner.sh
     publishers:
         - archive:
             artifacts: 'out/**/acs_log/**/*uart*'

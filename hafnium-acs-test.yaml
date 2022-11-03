@@ -101,6 +101,9 @@
           #!/bin/bash
           set -ex
 
+          echo $PATH
+          aarch64-none-elf-gcc -v
+
           mkdir ${WORKSPACE}/../fvp
           pushd ${WORKSPACE}/../fvp
           wget -q ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}

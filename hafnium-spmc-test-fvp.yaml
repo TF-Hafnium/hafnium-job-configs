@@ -56,6 +56,9 @@
                 - branch-pattern: 'master'
     wrappers:
         - timestamps
+        - timeout:
+            timeout: 60
+            fail: true
         - build-name:
             name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
     builders:

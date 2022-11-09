@@ -116,4 +116,4 @@
           ${WORKSPACE}/hafnium-ci-scripts/acs/runner.sh
     publishers:
         - archive:
-            artifacts: 'out/**/acs_log/**/*uart*'
+            artifacts: 'logs/*'

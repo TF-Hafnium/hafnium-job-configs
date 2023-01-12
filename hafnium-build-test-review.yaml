@@ -47,7 +47,6 @@
             - comment-added-event:
                 approval-category: 'Allow-CI'
                 approval-value: '1'
-            - patchset-created-event
           projects:
             - project-compare-type: 'PLAIN'
               project-pattern: 'hafnium/hafnium'

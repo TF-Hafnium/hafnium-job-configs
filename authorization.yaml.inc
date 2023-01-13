@@ -21,4 +21,13 @@
         - job-extended-read
         - job-build
         - job-cancel
-
+        madhukar-Arm:
+        - job-read
+        - job-extended-read
+        - job-build
+        - job-cancel
+        raghuncstate:
+        - job-read
+        - job-extended-read
+        - job-build
+        - job-cancel

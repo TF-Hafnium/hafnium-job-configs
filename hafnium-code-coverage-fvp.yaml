@@ -1,0 +1,64 @@
+- job:
+    name: hafnium-code-coverage-fvp
+    project-type: freestyle
+    defaults: global
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          num-to-keep: 90
+      - authorization:
+          !include: authorization.yaml.inc
+    parameters:
+        - string:
+            name: FVP_MODEL_ARCHIVE_NAME
+            default: 'FVP_Base_RevC-2xAEMvA_11.17_21.tgz'
+        - string:
+            name: FVP_MODEL_URL
+            default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
+        - string:
+            name: HF_REFSPEC
+            default: '+refs/heads/master:refs/remotes/origin/master'
+    disabled: false
+    node: docker-amd64-hafnium-focal
+    concurrent: true
+    display-name: 'Hafnium Code Coverage (FVP)'
+    scm:
+        - git:
+            url: https://review.trustedfirmware.org/hafnium/hafnium
+            refspec: ${HF_REFSPEC}
+            name: origin
+            branches:
+                - refs/heads/master
+            basedir: hafnium
+            choosing-strategy: gerrit
+            skip-tag: true
+            shallow-clone: true
+            wipe-workspace: false
+            submodule:
+                recursive: true
+    wrappers:
+        - timestamps
+        - timeout:
+            timeout: 60
+            fail: true
+        - build-name:
+            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+    builders:
+        - shell: |
+            #!/bin/bash
+
+            set -ex
+
+            mkdir ${WORKSPACE}/../fvp
+            pushd ${WORKSPACE}/../fvp
+            wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
+            tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
+            popd
+            PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
+            make PROJECT=reference ENABLE_ASSERTIONS=1
+            kokoro/test_spmc.sh
+    publishers:
+        - archive:
+            artifacts: 'out/**/kokoro_log/**/sponge_log.*'
+        - junit:
+            results: 'out/**/kokoro_log/**/sponge_log.xml'

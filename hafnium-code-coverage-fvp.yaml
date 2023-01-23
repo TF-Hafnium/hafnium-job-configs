@@ -29,7 +29,6 @@
             name: origin
             branches:
                 - refs/heads/master
-            basedir: hafnium
             choosing-strategy: gerrit
             skip-tag: true
             shallow-clone: true

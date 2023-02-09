@@ -58,6 +58,7 @@
             kokoro/test_spmc.sh
     publishers:
         - archive:
-            artifacts: 'out/**/kokoro_log/**/sponge_log.*'
+            artifacts: 'out/**/kokoro_log/**/sponge_log.*, out/reference/qa-code-coverage/**'
+            allow-empty: true
         - junit:
             results: 'out/**/kokoro_log/**/sponge_log.xml'

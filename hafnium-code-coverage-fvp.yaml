@@ -50,15 +50,18 @@
 
             mkdir ${WORKSPACE}/../fvp
             pushd ${WORKSPACE}/../fvp
-            wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
-            tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
+            wget -q ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
+            tar xfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
             kokoro/test_spmc.sh
     publishers:
+        - rich-text-publisher:
+            parser-name: HTML
+            stable-text: ${{FILE:report.html}}
         - archive:
-            artifacts: 'out/**/kokoro_log/**/sponge_log.*, out/reference/qa-code-coverage/**'
+            artifacts: 'out/**/kokoro_log/**/sponge_log.*, out/**/qa-code-coverage/**, report.html'
             allow-empty: true
         - junit:
             results: 'out/**/kokoro_log/**/sponge_log.xml'

@@ -15,27 +15,24 @@
         - string:
             name: FVP_MODEL_URL
             default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
-        - string:
-            name: HF_REFSPEC
-            default: '+refs/heads/master:refs/remotes/origin/master'
 
     disabled: false
     node: docker-amd64-hafnium-focal
     concurrent: true
     display-name: 'Hafnium-Hypervisor-TF-SPMC builder (FVP)'
     scm:
-      - git:
-          url: https://review.trustedfirmware.org/hafnium/hafnium
-          refspec: ${HF_REFSPEC}
-          name: origin
-          branches:
-            - refs/heads/master
-          choosing-strategy: gerrit
-          skip-tag: true
-          shallow-clone: true
-          wipe-workspace: false
-          submodule:
-              recursive: true
+        - git:
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
+            name: origin
+            branches:
+                - ${GERRIT_BRANCH}
+            choosing-strategy: gerrit
+            skip-tag: true
+            shallow-clone: true
+            wipe-workspace: false
+            submodule:
+                recursive: true
     triggers:
       - gerrit:
           server-name: 'review.trustedfirmware.org'

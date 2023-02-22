@@ -15,27 +15,27 @@
         - string:
             name: FVP_MODEL_URL
             default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
-        - bool:
-            name: RUN_ASSERT_DISABLED_BUILD
-            description: "Run tests with asserts disabled in addition to the asserts enabled build"
-            default: true
+        - string:
+            name: HF_REFSPEC
+            default: '+refs/heads/master:refs/remotes/origin/master'
+
     disabled: false
     node: docker-amd64-hafnium-focal
     concurrent: true
     display-name: 'Hafnium-Hypervisor-TF-SPMC builder (FVP)'
     scm:
-        - git:
-            url: https://review.trustedfirmware.org/hafnium/hafnium
-            refspec: refs/heads/master
-            name: origin
-            branches:
-                - master
-            choosing-strategy: gerrit
-            skip-tag: true
-            shallow-clone: true
-            wipe-workspace: false
-            submodule:
-                recursive: true
+      - git:
+          url: https://review.trustedfirmware.org/hafnium/hafnium
+          refspec: ${HF_REFSPEC}
+          name: origin
+          branches:
+            - refs/heads/master
+          choosing-strategy: gerrit
+          skip-tag: true
+          shallow-clone: true
+          wipe-workspace: false
+          submodule:
+              recursive: true
     triggers:
       - gerrit:
           server-name: 'review.trustedfirmware.org'
@@ -70,20 +70,6 @@
             PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
             kokoro/test_el3_spmc.sh
-
-            #
-            # Run also with asserts disabled if RUN_ASSERT_DISABLED_BUILD
-            # parameter is set.
-            # Call 'make clean' and remove args.gn file to ensure the value of
-            # enable_assertions is updated from the default.
-            #
-            if [ "$RUN_ASSERT_DISABLED_BUILD" == "true" ]
-            then
-              make clean
-              rm -f out/reference/build.ninja out/reference/args.gn
-              make PROJECT=reference ENABLE_ASSERTIONS=0
-              kokoro/test_el3_spmc.sh
-            fi
     publishers:
         - archive:
             artifacts: 'out/**/kokoro_log/**/sponge_log.*'

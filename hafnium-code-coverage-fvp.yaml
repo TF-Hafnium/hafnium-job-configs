@@ -16,6 +16,22 @@
         - string:
             name: HF_REFSPEC
             default: '+refs/heads/master:refs/remotes/origin/master'
+        - bool:
+            name: DEPLOY_HAFNIUM_AS_SPMC
+            default: true
+            description: "Run tests on Hafnium as SPMC."
+        - string:
+            name: ARGS_DEPLOY_SPMC
+            default:
+            trim: true
+        - bool:
+            name: DEPLOY_HAFNIUM_AS_HYP
+            default: false
+            description: "Run tests on Hafnium as NWd Hypervisor."
+        - string:
+            name: ARGS_DEPLOY_HYP
+            default:
+            trim: true
     disabled: false
     node: docker-amd64-hafnium-focal
     concurrent: true
@@ -53,7 +69,12 @@
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
-            kokoro/test_spmc.sh
+            if [ ${DEPLOY_HAFNIUM_AS_SPMC} == "true" ]
+              kokoro/test_spmc.sh ${ARGS_DEPLOY_SPMC}
+            fi
+            if [ ${DEPLOY_HAFNIUM_AS_HYP} == "true" ]
+              kokoro/test.sh ${ARGS_DEPLOY_HYP}
+            fi
     publishers:
         - rich-text-publisher:
             parser-name: HTML

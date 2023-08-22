@@ -61,19 +61,18 @@
             #!/bin/bash
 
             set -ex
-
-            mkdir ${WORKSPACE}/../fvp
-            pushd ${WORKSPACE}/../fvp
-            wget -q ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
-            tar xfz ${FVP_MODEL_ARCHIVE_NAME}
+            mkdir "${WORKSPACE}"/../fvp
+            pushd "${WORKSPACE}"/../fvp
+            wget -q "${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}"
+            tar xfz "${FVP_MODEL_ARCHIVE_NAME}"
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
-            if [ ${DEPLOY_HAFNIUM_AS_SPMC} == "true" ]
-              kokoro/test_spmc.sh ${ARGS_DEPLOY_SPMC}
+            if [ "${DEPLOY_HAFNIUM_AS_SPMC}" == "true" ]; then
+              kokoro/test_spmc.sh "${ARGS_DEPLOY_SPMC}"
             fi
-            if [ ${DEPLOY_HAFNIUM_AS_HYP} == "true" ]
-              kokoro/test.sh ${ARGS_DEPLOY_HYP}
+            if [ "${DEPLOY_HAFNIUM_AS_HYP}" == "true" ]; then
+              kokoro/test.sh "${ARGS_DEPLOY_HYP}"
             fi
     publishers:
         - rich-text-publisher:

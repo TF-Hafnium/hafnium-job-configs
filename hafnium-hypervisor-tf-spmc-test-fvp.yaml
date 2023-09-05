@@ -67,7 +67,7 @@
             wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
-            PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
+            PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
             kokoro/test_el3_spmc.sh
     publishers:

@@ -66,7 +66,7 @@
             wget -q "${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}"
             tar xfz "${FVP_MODEL_ARCHIVE_NAME}"
             popd
-            PATH=${WORKSPACE}/prebuilts/linux-x64/clang/bin:${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
+            PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
             if [ "${DEPLOY_HAFNIUM_AS_SPMC}" == "true" ]; then
               kokoro/test_spmc.sh "${ARGS_DEPLOY_SPMC}"

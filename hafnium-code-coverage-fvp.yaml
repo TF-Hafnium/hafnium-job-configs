@@ -69,10 +69,10 @@
             PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
             make PROJECT=reference ENABLE_ASSERTIONS=1
             if [ "${DEPLOY_HAFNIUM_AS_SPMC}" == "true" ]; then
-              kokoro/test_spmc.sh "${ARGS_DEPLOY_SPMC}"
+              kokoro/test_spmc.sh ${ARGS_DEPLOY_SPMC}
             fi
             if [ "${DEPLOY_HAFNIUM_AS_HYP}" == "true" ]; then
-              kokoro/test.sh "${ARGS_DEPLOY_HYP}"
+              kokoro/test.sh ${ARGS_DEPLOY_HYP}
             fi
     publishers:
         - rich-text-publisher:

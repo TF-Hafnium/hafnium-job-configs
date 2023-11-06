@@ -32,6 +32,14 @@
             name: ARGS_DEPLOY_HYP
             default:
             trim: true
+        - string:
+            name: QA_REPO_PUBLIC
+            default: https://git.gitlab.arm.com/tooling/qa-tools.git
+            trim: true
+        - string:
+            name: QA_REFSPEC
+            default: master
+            trim: true
     disabled: false
     node: docker-amd64-hafnium-focal
     concurrent: true
@@ -74,6 +82,8 @@
             if [ "${DEPLOY_HAFNIUM_AS_HYP}" == "true" ]; then
               kokoro/test.sh ${ARGS_DEPLOY_HYP}
             fi
+    triggers:
+        - timed: '59 23 * * 6'
     publishers:
         - rich-text-publisher:
             parser-name: HTML

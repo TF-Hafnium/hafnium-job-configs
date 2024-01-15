@@ -22,7 +22,7 @@
             description: "Run tests on Hafnium as SPMC."
         - string:
             name: ARGS_DEPLOY_SPMC
-            default:
+            default: --code-coverage
             trim: true
         - bool:
             name: DEPLOY_HAFNIUM_AS_HYP

@@ -55,8 +55,3 @@
             set -ex
 
             kokoro/static_checks.sh
-    publishers:
-        - archive:
-            artifacts: 'out/**/kokoro_log/**/sponge_log.*'
-        - junit:
-            results: 'out/**/kokoro_log/**/sponge_log.xml'

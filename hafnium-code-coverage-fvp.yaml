@@ -33,6 +33,14 @@
             default:
             trim: true
         - string:
+            name: INCLUDE_FILES
+            trim: true
+            description: "Space-separated list of glob-patterns defining files/folders to be included in the report."
+        - string:
+            name: EXCLUDE_FILES
+            trim: true
+            description: "Space-separated list of glob-patterns defining files/folders to be excluded in the report."
+        - string:
             name: QA_REPO_PUBLIC
             default: https://git.gitlab.arm.com/tooling/qa-tools.git
             trim: true

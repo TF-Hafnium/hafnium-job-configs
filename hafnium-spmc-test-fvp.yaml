@@ -9,10 +9,10 @@
     parameters:
         - string:
             name: FVP_MODEL_ARCHIVE_NAME
-            default: 'FVP_Base_RevC-2xAEMvA_11.24_11_Linux64.tgz'
+            default: 'FM-11.27/FVP_Base_RevC-2xAEMvA_11.27_19_Linux64.tgz'
         - string:
             name: FVP_MODEL_URL
-            default: 'https://developer.arm.com/-/media/Files/downloads/ecosystem-models'
+            default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms'
         - bool:
             name: RUN_ASSERT_DISABLED_BUILD
             description: "Run tests with asserts disabled in addition to the asserts enabled build"

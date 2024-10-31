@@ -54,7 +54,7 @@
     wrappers:
         - timestamps
         - timeout:
-            timeout: 90
+            timeout: 120
             fail: true
         - build-name:
             name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'

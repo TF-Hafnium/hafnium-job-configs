@@ -118,3 +118,5 @@
     publishers:
         - archive:
             artifacts: 'logs/*'
+    triggers:
+        - timed: '11 30 * * 1'

@@ -59,7 +59,7 @@
 - job:
     name: hafnium-acs-test
     description: ACS compliance tests for Hafnium
-    node: docker-amd64-hafnium-focal
+    node: docker-amd64-hafnium-noble
     concurrent: true
     display-name: 'Hafnium ACS build and test'
     properties:

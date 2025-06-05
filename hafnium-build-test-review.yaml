@@ -17,7 +17,7 @@
 #            name: GERRIT_REFSPEC
 #            default: 'refs/heads/master'
     disabled: false
-    node: docker-amd64-hafnium-noble
+    node: docker-amd64-hafnium-focal
     concurrent: true
     display-name: 'Hafnium builder'
     scm:

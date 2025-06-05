@@ -18,7 +18,7 @@
             description: "Run tests with asserts disabled in addition to the asserts enabled build"
             default: true
     disabled: false
-    node: docker-amd64-hafnium-noble
+    node: docker-amd64-hafnium-focal
     concurrent: true
     display-name: 'Hafnium builder (FVP)'
     scm:

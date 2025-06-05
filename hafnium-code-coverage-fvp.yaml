@@ -49,7 +49,7 @@
             default: master
             trim: true
     disabled: false
-    node: docker-amd64-hafnium-noble
+    node: docker-amd64-hafnium-focal
     concurrent: true
     display-name: 'Hafnium Code Coverage (FVP)'
     scm:

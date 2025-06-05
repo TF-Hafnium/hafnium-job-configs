@@ -7,7 +7,7 @@
           days-to-keep: 90
           num-to-keep: 90
     disabled: false
-    node: docker-amd64-hafnium-noble
+    node: docker-amd64-hafnium-focal
     concurrent: true
     scm:
         - git:

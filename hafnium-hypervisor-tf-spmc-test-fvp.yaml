@@ -15,7 +15,7 @@
             default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
 
     disabled: false
-    node: docker-amd64-hafnium-focal
+    node: docker-amd64-hafnium-noble
     concurrent: true
     display-name: 'Hafnium-Hypervisor-TF-SPMC builder (FVP)'
     scm:

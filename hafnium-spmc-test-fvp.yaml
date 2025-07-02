@@ -13,6 +13,9 @@
         - string:
             name: FVP_MODEL_URL
             default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
+        - string:
+            name: HF_REFSPEC
+            default: '+refs/heads/master:refs/remotes/origin/master'
         - bool:
             name: RUN_ASSERT_DISABLED_BUILD
             description: "Run tests with asserts disabled in addition to the asserts enabled build"

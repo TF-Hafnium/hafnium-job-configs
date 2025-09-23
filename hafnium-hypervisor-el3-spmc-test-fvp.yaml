@@ -1,5 +1,5 @@
 - job:
-    name: hafnium-hypervisor-tf-spmc-test-fvp
+    name: hafnium-hypervisor-el3-spmc-test-fvp
     project-type: freestyle
     defaults: global
     properties:
@@ -17,7 +17,7 @@
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium-Hypervisor-TF-SPMC builder (FVP)'
+    display-name: 'Hafnium-Hypervisor-EL3-SPMC builder (FVP)'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}

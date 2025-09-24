@@ -23,7 +23,7 @@
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium builder (FVP)'
+    display-name: 'Hafnium-SPMC builder (FVP)'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}

@@ -1,25 +1,15 @@
 - job:
-    name: hafnium-build-test-qemu
+    name: hafnium-unit-test
     project-type: freestyle
     defaults: global
     properties:
       - build-discarder:
           days-to-keep: 90
           num-to-keep: 90
-#    parameters:
-#        - string:
-#            name: GERRIT_PROJECT
-#            default: 'hafnium/hafnium'
-#        - string:
-#            name: GERRIT_BRANCH
-#            default: 'master'
-#        - string:
-#            name: GERRIT_REFSPEC
-#            default: 'refs/heads/master'
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium builder (QEMU)'
+    display-name: 'Hafnium Unit Test builder'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
@@ -50,8 +40,6 @@
               project-pattern: 'hafnium/hafnium'
               branches:
                 - branch-pattern: 'master'
-#            silent: false
-#            silent-start: true
     wrappers:
         - timestamps
         - timeout:
@@ -64,7 +52,7 @@
             #!/bin/bash
 
             set -ex
-            export RUN_QEMU_ONLY=true
+            export RUN_UNIT_ONLY=true
             kokoro/build.sh
     publishers:
         - archive:

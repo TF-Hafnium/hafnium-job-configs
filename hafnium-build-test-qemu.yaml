@@ -1,5 +1,5 @@
 - job:
-    name: hafnium-build-test-review
+    name: hafnium-build-test-qemu
     project-type: freestyle
     defaults: global
     properties:
@@ -19,7 +19,7 @@
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium builder'
+    display-name: 'Hafnium builder (QEMU)'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}

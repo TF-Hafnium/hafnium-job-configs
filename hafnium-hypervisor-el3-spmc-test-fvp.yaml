@@ -68,8 +68,8 @@
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
-            make PROJECT=reference ENABLE_ASSERTIONS=1
-            kokoro/test_el3_spmc.sh
+            export RUN_EL3_SPMC_ONLY=true
+            kokoro/build.sh
     publishers:
         - archive:
             artifacts: 'out/**/kokoro_log/**/sponge_log.*'

@@ -73,21 +73,18 @@
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
-            make PROJECT=reference ENABLE_ASSERTIONS=1
-            kokoro/test_spmc.sh
+            export RUN_SPMC_ONLY=true
+            kokoro/build.sh
 
             #
             # Run also with asserts disabled if RUN_ASSERT_DISABLED_BUILD
             # parameter is set.
-            # Call 'make clean' and remove args.gn file to ensure the value of
-            # enable_assertions is updated from the default.
             #
             if [ "$RUN_ASSERT_DISABLED_BUILD" == "true" ]
             then
-              make clean
-              rm -f out/reference/build.ninja out/reference/args.gn
-              make PROJECT=reference ENABLE_ASSERTIONS=0
-              kokoro/test_spmc.sh
+              export HAFNIUM_RUN_ASSERT_DISABLED_BUILD=true
+              export RUN_SPMC_ONLY=true
+              kokoro/build.sh
             fi
     publishers:
         - archive:

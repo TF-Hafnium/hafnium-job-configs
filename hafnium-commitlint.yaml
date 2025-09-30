@@ -1,0 +1,106 @@
+- job:
+    name: hafnium-commitlint
+    description: Lint Hafnium commit messages (HEAD..origin/<base>).
+    project-type: freestyle
+    node: docker-amd64-hafnium-noble
+    display-name: 'Hafnium-Commitlint'
+    defaults: global
+
+    properties:
+      - build-discarder:
+          days-to-keep: 30
+          num-to-keep: 30
+
+    parameters:
+        - string:
+            name: URL
+            description: 'Git URL of the change under test'
+            default: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+        - string:
+            name: REFSPEC
+            description: 'Git refspec to fetch (e.g. ${GERRIT_REFSPEC} or +refs/heads/*:refs/remotes/origin/*)'
+            default: ${GERRIT_REFSPEC}
+        - string:
+            name: REFNAME
+            description: 'Commit SHA or ref to checkout for linting'
+            default: '${GERRIT_PATCHSET_REVISION}'
+        - string:
+            name: REFNAME_BASE
+            description: 'Base branch ref to compare against'
+            default: 'origin/${GERRIT_BRANCH}'
+
+    disabled: false
+    concurrent: true
+
+    scm:
+        - git:
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
+            name: origin
+            branches:
+                - ${GERRIT_BRANCH}
+            choosing-strategy: gerrit
+            skip-tag: true
+            depth: 100
+            shallow-clone: true
+            wipe-workspace: false
+            submodule:
+                recursive: true
+    triggers:
+      - gerrit:
+          server-name: 'review.trustedfirmware.org'
+          override-votes: true
+          gerrit-build-successful-verified-value: 1
+          gerrit-build-failed-verified-value: -1
+          gerrit-build-successful-codereview-value: 0
+          gerrit-build-failed-codereview-value: 0
+          trigger-on:
+            - comment-added-event:
+                approval-category: 'Allow-CI'
+                approval-value: '1'
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: 'hafnium/hafnium'
+              branches:
+                - branch-pattern: 'master'
+    wrappers:
+        - timestamps
+        - timeout:
+            timeout: 30
+            fail: true
+        - build-name:
+            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+    builders:
+        - shell: |
+            #!/bin/bash
+
+            set -ex
+
+            # Defaults for Manual runs (Gerrit sets these automatically on Allow-CI+1)
+            : "${GERRIT_PROJECT:=hafnium/hafnium}"
+            : "${GERRIT_BRANCH:=master}"
+            : "${GERRIT_PATCHSET_REVISION:=HEAD}"
+            : "${URL:=https://review.trustedfirmware.org/${GERRIT_PROJECT}}"
+
+            # Ensure we're fetching from the right repo and have the base branch tip
+            git remote set-url origin "${URL}"
+            git fetch --no-tags --depth=100 origin \
+              "refs/heads/${GERRIT_BRANCH}:refs/remotes/origin/${GERRIT_BRANCH}"
+
+            # Define the lint range = commits ahead of base (origin/<branch>) up to the target.
+            # Important for manual runs (Allows setting REFNAME).
+            FROM="origin/${GERRIT_BRANCH}"
+            TO="${REFNAME:-${GERRIT_PATCHSET_REVISION}}"
+
+            # Show the commits that will be linted.
+            echo "commitlint: range ${FROM}..${TO}"
+            git log --oneline --no-decorate "${FROM}..${TO}" || true
+
+            # Nothing ahead of base, so exit successfully (no commits to lint)
+            if [[ "$(git rev-list --count "${FROM}..${TO}")" -eq 0 ]]; then
+              echo "No new commits to lint (range empty)."
+              exit 0
+            fi
+
+            # Make Commitlint target (build/commitlint.sh installs + runs commitlint)
+            make commitlint COMMITLINT_FROM="${FROM}" COMMITLINT_TO="${TO}"

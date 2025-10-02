@@ -1,6 +1,6 @@
 - job:
     name: hafnium-commitlint
-    description: Lint Hafnium commit messages (HEAD..origin/<base>).
+    description: Lint Hafnium commit messages (origin/master..target).
     project-type: freestyle
     node: docker-amd64-hafnium-noble
     display-name: 'Hafnium-Commitlint'
@@ -15,11 +15,11 @@
         - string:
             name: URL
             description: 'Git URL of the change under test'
-            default: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            default: https://review.trustedfirmware.org/hafnium/hafnium
         - string:
             name: REFSPEC
             description: 'Git refspec to fetch (e.g. ${GERRIT_REFSPEC} or +refs/heads/*:refs/remotes/origin/*)'
-            default: ${GERRIT_REFSPEC}
+            default: +refs/heads/*:refs/remotes/origin/*
         - string:
             name: REFNAME
             description: 'Commit SHA or ref to checkout for linting'
@@ -27,19 +27,18 @@
         - string:
             name: REFNAME_BASE
             description: 'Base branch ref to compare against'
-            default: 'origin/${GERRIT_BRANCH}'
+            default: 'origin/master'
 
     disabled: false
     concurrent: true
 
     scm:
         - git:
-            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
-            refspec: ${GERRIT_REFSPEC}
+            url: https://review.trustedfirmware.org/hafnium/hafnium
+            refspec: +refs/heads/*:refs/remotes/origin/*
             name: origin
             branches:
-                - ${GERRIT_BRANCH}
-            choosing-strategy: gerrit
+                - '*/master'
             skip-tag: true
             depth: 100
             shallow-clone: true
@@ -90,7 +89,7 @@
             # Define the lint range = commits ahead of base (origin/<branch>) up to the target.
             # Important for manual runs (Allows setting REFNAME).
             FROM="origin/${GERRIT_BRANCH}"
-            TO="${REFNAME:-${GERRIT_PATCHSET_REVISION}}"
+            TO="${REFNAME:-${GERRIT_PATCHSET_REVISION:-HEAD}}"
 
             # Show the commits that will be linted.
             echo "commitlint: range ${FROM}..${TO}"

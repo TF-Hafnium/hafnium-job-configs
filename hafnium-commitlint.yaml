@@ -1,10 +1,12 @@
 - job:
     name: hafnium-commitlint
-    description: Lint Hafnium commit messages (HEAD..origin/<base>).
+    description: Lint Hafnium commit messages (merge-base(REFNAME_BASE, HEAD)..HEAD)
     project-type: freestyle
     node: docker-amd64-hafnium-noble
     display-name: 'Hafnium-Commitlint'
     defaults: global
+    disabled: false
+    concurrent: true
 
     properties:
       - build-discarder:
@@ -15,37 +17,34 @@
         - string:
             name: URL
             description: 'Git URL of the change under test'
-            default: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            default: https://review.trustedfirmware.org/hafnium/hafnium
         - string:
             name: REFSPEC
-            description: 'Git refspec to fetch (e.g. ${GERRIT_REFSPEC} or +refs/heads/*:refs/remotes/origin/*)'
-            default: ${GERRIT_REFSPEC}
+            description: 'Git refspec to fetch'
+            default: +refs/heads/*:refs/remotes/origin/*
         - string:
             name: REFNAME
-            description: 'Commit SHA or ref to checkout for linting'
-            default: '${GERRIT_PATCHSET_REVISION}'
+            description: 'Git refname of the last commit to lint'
+            default: origin/master
         - string:
             name: REFNAME_BASE
             description: 'Base branch ref to compare against'
-            default: 'origin/${GERRIT_BRANCH}'
-
-    disabled: false
-    concurrent: true
+            default: origin/master
 
     scm:
         - git:
-            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
-            refspec: ${GERRIT_REFSPEC}
+            url: ${URL}
+            refspec: ${REFSPEC}
             name: origin
             branches:
-                - ${GERRIT_BRANCH}
-            choosing-strategy: gerrit
+                - ${REFNAME}
             skip-tag: true
             depth: 100
-            shallow-clone: true
+            shallow-clone: false
             wipe-workspace: false
             submodule:
                 recursive: true
+
     triggers:
       - gerrit:
           server-name: 'review.trustedfirmware.org'
@@ -62,7 +61,9 @@
             - project-compare-type: 'PLAIN'
               project-pattern: 'hafnium/hafnium'
               branches:
-                - branch-pattern: 'master'
+                - branch-compare-type: PLAIN
+                  branch-pattern: 'master'
+
     wrappers:
         - timestamps
         - timeout:
@@ -70,37 +71,44 @@
             fail: true
         - build-name:
             name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+
     builders:
-        - shell: |
-            #!/bin/bash
+      - shell: |
+          #!/bin/bash
+          set -euo pipefail
+          set -x
 
-            set -ex
+          # Ensure all heads (incl. REFNAME_BASE) exist locally.
+          git fetch --no-tags "${URL}" '+refs/heads/*:refs/remotes/origin/*'
 
-            # Defaults for Manual runs (Gerrit sets these automatically on Allow-CI+1)
-            : "${GERRIT_PROJECT:=hafnium/hafnium}"
-            : "${GERRIT_BRANCH:=master}"
-            : "${GERRIT_PATCHSET_REVISION:=HEAD}"
-            : "${URL:=https://review.trustedfirmware.org/${GERRIT_PROJECT}}"
+          # Prefer Gerrit-provided refspec on CI; otherwise use the manual REFSPEC.
+          FETCH_SPEC="${REFSPEC}"
+          if [[ -n "${GERRIT_REFSPEC:-}" ]]; then
+            FETCH_SPEC="${GERRIT_REFSPEC}"
+          fi
 
-            # Ensure we're fetching from the right repo and have the base branch tip
-            git remote set-url origin "${URL}"
-            git fetch --no-tags --depth=100 origin \
-              "refs/heads/${GERRIT_BRANCH}:refs/remotes/origin/${GERRIT_BRANCH}"
+          # Fetch the exact ref to lint (Gerrit patchset on CI or REFSPEC from
+          # manual run) into FETCH_HEAD, then check out FETCH_HEAD so HEAD points
+          # at the patch tip.
+          git fetch --no-tags "${URL}" "${FETCH_SPEC}"
+          git checkout -qf FETCH_HEAD
 
-            # Define the lint range = commits ahead of base (origin/<branch>) up to the target.
-            # Important for manual runs (Allows setting REFNAME).
-            FROM="origin/${GERRIT_BRANCH}"
-            TO="${REFNAME:-${GERRIT_PATCHSET_REVISION}}"
+          # Range: FROM = merge-base(base, HEAD), TO = HEAD (patch tip)
+          merge_base="$(git merge-base "${REFNAME_BASE}" HEAD)"
+          echo "Computed merge-base: ${merge_base}"
+          echo "Linting commits: ${merge_base}..HEAD"
+          git log --oneline "${merge_base}..HEAD" || true
 
-            # Show the commits that will be linted.
-            echo "commitlint: range ${FROM}..${TO}"
-            git log --oneline --no-decorate "${FROM}..${TO}" || true
+          # Nothing ahead of base, so exit successfully (no commits to lint)
+          if [[ "$(git rev-list --count "${merge_base}..HEAD")" -eq 0 ]]; then
+            echo "No new commits to lint (range is empty)."
+            exit 0
+          fi
 
-            # Nothing ahead of base, so exit successfully (no commits to lint)
-            if [[ "$(git rev-list --count "${FROM}..${TO}")" -eq 0 ]]; then
-              echo "No new commits to lint (range empty)."
-              exit 0
-            fi
-
-            # Make Commitlint target (build/commitlint.sh installs + runs commitlint)
-            make commitlint COMMITLINT_FROM="${FROM}" COMMITLINT_TO="${TO}"
+          # Lint the computed range (merge_base..HEAD) using Hafnium's make target.
+          # For readability, insert a blank line after each commit's result line.
+          make commitlint COMMITLINT_FROM="${merge_base}" COMMITLINT_TO="HEAD" \
+            | awk '{
+                print;
+                if ($0 ~ /found[[:space:]]+[0-9]+[[:space:]]+problems?/) print "";
+              }'

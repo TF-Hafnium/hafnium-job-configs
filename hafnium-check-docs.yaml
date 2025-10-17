@@ -38,7 +38,6 @@
           name: origin
           branches:
             - ${REFNAME}
-          choosing-strategy: gerrit
           skip-tag: true
           shallow-clone: false
           wipe-workspace: true

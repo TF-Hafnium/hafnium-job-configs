@@ -1,0 +1,129 @@
+- job:
+    name: hafnium-lts2.14-check-docs
+    display-name: 'Hafnium LTS v2.14 - Check Docs'
+    description: Build docs for hafnium LTS v2.14
+    project-type: freestyle
+    node: docker-amd64-hafnium-lts2.14-noble
+    defaults: global
+    disabled: false
+    concurrent: true
+
+    properties:
+      - build-discarder:
+          days-to-keep: 30
+          num-to-keep: 30
+
+    parameters:
+      - string:
+          name: URL
+          description: Hafnium Repository URL
+          default: https://review.trustedfirmware.org/hafnium/hafnium
+      - string:
+          name: REFSPEC
+          description: Git refspec to fetch
+          default: +refs/heads/*:refs/remotes/origin/*
+      - string:
+          name: REFNAME
+          description: Git refname of the last commit to build.
+          default: origin/lts-v2.14
+      - string:
+          name: REFNAME_BASE
+          description: Base branch ref to compare against
+          default: origin/lts-v2.14
+
+    scm:
+      - git:
+          url: ${URL}
+          refspec: ${REFSPEC}
+          name: origin
+          branches:
+            - ${REFNAME}
+          skip-tag: true
+          shallow-clone: false
+          wipe-workspace: true
+          submodule:
+            recursive: true
+
+    triggers:
+      - gerrit:
+          server-name: review.trustedfirmware.org
+          override-votes: true
+          gerrit-build-successful-verified-value: 1
+          gerrit-build-failed-verified-value: -1
+          gerrit-build-successful-codereview-value: 0
+          gerrit-build-failed-codereview-value: 0
+          trigger-on:
+            - comment-added-event:
+                approval-category: Allow-CI
+                approval-value: 1
+          projects:
+            - project-compare-type: PLAIN
+              project-pattern: hafnium/hafnium
+              branches:
+                - branch-compare-type: PLAIN
+                  branch-pattern: lts-v2.14
+
+    wrappers:
+      - timestamps
+      - timeout:
+          timeout: 30
+          fail: true
+      - build-name:
+          name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+      - workspace-cleanup
+      - inject:
+          properties-content: |
+            LANG=C.UTF-8
+            LC_ALL=C.UTF-8
+            PYTHONIOENCODING=UTF-8
+
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -euo pipefail
+          set -x
+
+          # 1) Ensure heads exist (helps fresh/manual runs)
+          git fetch --no-tags "${URL}" '+refs/heads/*:refs/remotes/origin/*'
+
+          # 2) Choose what to fetch
+          # - Gerrit run => use the change ref (GERRIT_REFSPEC)
+          # - Manual run  => use the mapping from REFSPEC (heads)
+          FETCH_SPEC="${REFSPEC}"
+          if [ -n "${GERRIT_REFSPEC:-}" ]; then
+            FETCH_SPEC="${GERRIT_REFSPEC}"
+          fi
+
+          # 3) Fetch and check out the target
+          git fetch --no-tags "${URL}" "${FETCH_SPEC}"
+          git checkout -qf FETCH_HEAD
+
+          echo "HEAD: $(git rev-parse --short HEAD)"
+          echo "BASE: ${REFNAME_BASE}"
+
+          # 4) Only build if something under docs/ changed
+          merge_base="$(git merge-base "${REFNAME_BASE}" HEAD)"
+          echo "merge-base: ${merge_base}"
+          if ! git diff --name-only "${merge_base}..HEAD" -- docs/ | grep -q .; then
+            echo "[docs] No changes under docs/ - skipping (success)."
+            exit 0
+          fi
+          echo "[docs] Changes under docs/ - building..."
+
+          # 5) Install docs extras into Poetry venv
+          poetry -C "$PWD" install --no-root --with docs
+
+          # 6) Build docs (no warnings-as-errors)
+          poetry run make doc
+
+          echo "[docs] Build completed."
+
+    publishers:
+      - conditional-publisher:
+          - condition-kind: file-exists
+            condition-filename: docs/build/html/index.html
+            action:
+              - archive:
+                  artifacts: 'docs/build/html/**'
+                  only-if-success: true
+                  fingerprint: true

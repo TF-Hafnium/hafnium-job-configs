@@ -1,0 +1,93 @@
+- job:
+    name: hafnium-lts2.14-spmc-test-fvp
+    project-type: freestyle
+    defaults: global
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          num-to-keep: 90
+    parameters:
+        - string:
+            name: FVP_MODEL_ARCHIVE_NAME
+            default: 'FVP_Base_RevC-2xAEMvA_11.27_19_Linux64.tgz'
+        - string:
+            name: FVP_MODEL_URL
+            default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
+        - string:
+            name: HF_REFSPEC
+            default: '+refs/heads/master:refs/remotes/origin/master'
+        - bool:
+            name: RUN_ASSERT_DISABLED_BUILD
+            description: "Run tests with asserts disabled in addition to the asserts enabled build"
+            default: true
+    disabled: false
+    node: docker-amd64-hafnium-lts2.14-noble
+    concurrent: true
+    display-name: 'Hafnium LTS 2.14 SPMC builder (FVP)'
+    scm:
+        - git:
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
+            name: origin
+            branches:
+                - ${GERRIT_BRANCH}
+            choosing-strategy: gerrit
+            skip-tag: true
+            shallow-clone: true
+            wipe-workspace: false
+            submodule:
+                recursive: true
+    triggers:
+      - gerrit:
+          server-name: 'review.trustedfirmware.org'
+          override-votes: true
+          gerrit-build-successful-verified-value: 1
+          gerrit-build-failed-verified-value: -1
+          gerrit-build-successful-codereview-value: 0
+          gerrit-build-failed-codereview-value: 0
+          trigger-on:
+            - comment-added-event:
+                approval-category: 'Allow-CI'
+                approval-value: '1'
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: 'hafnium/hafnium'
+              branches:
+                - branch-pattern: 'lts-v2.14'
+    wrappers:
+        - timestamps
+        - timeout:
+            timeout: 120
+            fail: true
+        - build-name:
+            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+    builders:
+        - shell: |
+            #!/bin/bash
+
+            set -ex
+
+            mkdir ${WORKSPACE}/../fvp
+            pushd ${WORKSPACE}/../fvp
+            wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
+            tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
+            popd
+            PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
+            export RUN_SPMC_ONLY=true
+            kokoro/build.sh
+
+            #
+            # Run also with asserts disabled if RUN_ASSERT_DISABLED_BUILD
+            # parameter is set.
+            #
+            if [ "$RUN_ASSERT_DISABLED_BUILD" == "true" ]
+            then
+              export HAFNIUM_RUN_ASSERT_DISABLED_BUILD=true
+              export RUN_SPMC_ONLY=true
+              kokoro/build.sh
+            fi
+    publishers:
+        - archive:
+            artifacts: 'out/**/kokoro_log/**/sponge_log.*'
+        - junit:
+            results: 'out/**/kokoro_log/**/sponge_log.xml'

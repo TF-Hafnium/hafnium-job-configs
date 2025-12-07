@@ -1,0 +1,12 @@
+- view:
+    name: Hafnium
+    view-type: list
+    regex: ^hafnium-lts2.14-.*
+    columns:
+        - status
+        - weather
+        - job
+        - last-success
+        - last-failure
+        - last-duration
+        - build-button

@@ -1,0 +1,114 @@
+- job:
+    name: hafnium-lts2.14-commitlint
+    description: Lint Hafnium LTS v2.14 commit messages (merge-base(REFNAME_BASE, HEAD)..HEAD)
+    project-type: freestyle
+    node: docker-amd64-hafnium-lts2.14-noble
+    display-name: 'Hafnium LTS v2.14 Commitlint'
+    defaults: global
+    disabled: false
+    concurrent: true
+
+    properties:
+      - build-discarder:
+          days-to-keep: 30
+          num-to-keep: 30
+
+    parameters:
+        - string:
+            name: URL
+            description: 'Git URL of the change under test'
+            default: https://review.trustedfirmware.org/hafnium/hafnium
+        - string:
+            name: REFSPEC
+            description: 'Git refspec to fetch'
+            default: +refs/heads/*:refs/remotes/origin/*
+        - string:
+            name: REFNAME
+            description: 'Git refname of the last commit to lint'
+            default: origin/lts-v2.14
+        - string:
+            name: REFNAME_BASE
+            description: 'Base branch ref to compare against'
+            default: origin/lts-v2.14
+
+    scm:
+        - git:
+            url: ${URL}
+            refspec: ${REFSPEC}
+            name: origin
+            branches:
+                - ${REFNAME}
+            skip-tag: true
+            depth: 100
+            shallow-clone: false
+            wipe-workspace: false
+            submodule:
+                recursive: true
+
+    triggers:
+      - gerrit:
+          server-name: 'review.trustedfirmware.org'
+          override-votes: true
+          gerrit-build-successful-verified-value: 1
+          gerrit-build-failed-verified-value: -1
+          gerrit-build-successful-codereview-value: 0
+          gerrit-build-failed-codereview-value: 0
+          trigger-on:
+            - comment-added-event:
+                approval-category: 'Allow-CI'
+                approval-value: '1'
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: 'hafnium/hafnium'
+              branches:
+                - branch-compare-type: PLAIN
+                  branch-pattern: 'lts-v2.14'
+
+    wrappers:
+        - timestamps
+        - timeout:
+            timeout: 30
+            fail: true
+        - build-name:
+            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -euo pipefail
+          set -x
+
+          # Ensure all heads (incl. REFNAME_BASE) exist locally.
+          git fetch --no-tags "${URL}" '+refs/heads/*:refs/remotes/origin/*'
+
+          # Prefer Gerrit-provided refspec on CI; otherwise use the manual REFSPEC.
+          FETCH_SPEC="${REFSPEC}"
+          if [[ -n "${GERRIT_REFSPEC:-}" ]]; then
+            FETCH_SPEC="${GERRIT_REFSPEC}"
+          fi
+
+          # Fetch the exact ref to lint (Gerrit patchset on CI or REFSPEC from
+          # manual run) into FETCH_HEAD, then check out FETCH_HEAD so HEAD points
+          # at the patch tip.
+          git fetch --no-tags "${URL}" "${FETCH_SPEC}"
+          git checkout -qf FETCH_HEAD
+
+          # Range: FROM = merge-base(base, HEAD), TO = HEAD (patch tip)
+          merge_base="$(git merge-base "${REFNAME_BASE}" HEAD)"
+          echo "Computed merge-base: ${merge_base}"
+          echo "Linting commits: ${merge_base}..HEAD"
+          git log --oneline "${merge_base}..HEAD" || true
+
+          # Nothing ahead of base, so exit successfully (no commits to lint)
+          if [[ "$(git rev-list --count "${merge_base}..HEAD")" -eq 0 ]]; then
+            echo "No new commits to lint (range is empty)."
+            exit 0
+          fi
+
+          # Lint the computed range (merge_base..HEAD) using Hafnium's make target.
+          # For readability, insert a blank line after each commit's result line.
+          make commitlint COMMITLINT_FROM="${merge_base}" COMMITLINT_TO="HEAD" \
+            | awk '{
+                print;
+                if ($0 ~ /found[[:space:]]+[0-9]+[[:space:]]+problems?/) print "";
+              }'

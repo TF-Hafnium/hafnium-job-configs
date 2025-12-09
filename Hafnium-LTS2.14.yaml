@@ -1,5 +1,5 @@
 - view:
-    name: Hafnium
+    name: Hafnium-LTS2.14
     view-type: list
     regex: ^hafnium-lts2.14-.*
     columns:

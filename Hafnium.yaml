@@ -2,6 +2,8 @@
     name: Hafnium
     view-type: list
     regex: ^hafnium-.*
+    filter-queue: true
+    filter-executors: true
     columns:
         - status
         - weather

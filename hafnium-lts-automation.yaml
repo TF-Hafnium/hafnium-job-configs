@@ -66,8 +66,10 @@
 
 
           if [ -n "${UPSTREAM_REFNAME:-}" ]; then
-            # Triggered from tf-a-lts-automation
+            # Triggered by tf-a-lts-automation
+            echo "Triggered by tf-a-lts-automation"
             echo "New LTS branch created: ${BRANCH}"
+            MAIN_PROJ="hafnium/hafnium"
           elif [ "${GERRIT_EVENT_TYPE:-}" = "ref-updated" -a \
                  "${GERRIT_OLDREV:-}" = "0000000000000000000000000000000000000000" ]; then
             # Triggered from new LTS branch creation
@@ -79,10 +81,12 @@
 
           _workdir=$(mktemp -d)
           trap '[ -d "${_workdir}" ] && rm -rf "${_workdir}"' EXIT
+          git -C ${_workdir} init > /dev/null 2>&1
 
           # Create branch on the sub-modules
           echo "Create branch ${BRANCH} on the sub-modules"
-          repos="hafnium/project/reference \
+          repos="${MAIN_PROJ} \
+                 hafnium/project/reference \
                  hafnium/prebuilts \
                  hafnium/third_party/googletest \
                  hafnium/third_party/dtc \
@@ -92,9 +96,11 @@
           for r in ${repos};
           do
               echo "Create branch \"${BRANCH}\" from tag \"${FORKED_TAG}\" in the \"${r}\" project"
-              git -C "${_workdir}" fetch ${GERRIT_SERVER}/${r} ${FORKED_TAG} || \
-              (echo "Can not find \"${FORKED_TAG}\" tag on ${r} repository"; exit 1)
-              git -C "${_workdir}" push ${GERRIT_SERVER}/${r} FETCH_HEAD^{commit}:refs/heads/${BRANCH}
+              if ! git ls-remote --exit-code "${GERRIT_SERVER}/${r} ${BRANCH} >/dev/null 2>&1; then
+                git -C "${_workdir}" fetch ${GERRIT_SERVER}/${r} ${FORKED_TAG} || \
+                (echo "Can not find \"${FORKED_TAG}\" tag on ${r} repository"; exit 1)
+                git -C "${_workdir}" push ${GERRIT_SERVER}/${r} FETCH_HEAD^{commit}:refs/heads/${BRANCH}
+              fi
           done
 
       - conditional-step:

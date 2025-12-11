@@ -85,7 +85,7 @@
 
           # Create branch on the sub-modules
           echo "Create branch ${BRANCH} on the sub-modules"
-          repos="${MAIN_PROJ} \
+          repos="${MAIN_PROJ:-} \
                  hafnium/project/reference \
                  hafnium/prebuilts \
                  hafnium/third_party/googletest \

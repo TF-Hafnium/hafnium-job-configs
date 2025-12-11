@@ -96,7 +96,7 @@
           for r in ${repos};
           do
               echo "Create branch \"${BRANCH}\" from tag \"${FORKED_TAG}\" in the \"${r}\" project"
-              if ! git ls-remote --exit-code "${GERRIT_SERVER}/${r} ${BRANCH} >/dev/null 2>&1; then
+              if ! git ls-remote --exit-code "${GERRIT_SERVER}/${r}" "${BRANCH}" >/dev/null 2>&1; then
                 git -C "${_workdir}" fetch ${GERRIT_SERVER}/${r} ${FORKED_TAG} || \
                 (echo "Can not find \"${FORKED_TAG}\" tag on ${r} repository"; exit 1)
                 git -C "${_workdir}" push ${GERRIT_SERVER}/${r} FETCH_HEAD^{commit}:refs/heads/${BRANCH}

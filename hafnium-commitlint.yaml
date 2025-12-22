@@ -3,7 +3,7 @@
     description: Lint Hafnium commit messages (merge-base(REFNAME_BASE, HEAD)..HEAD)
     project-type: freestyle
     node: docker-amd64-hafnium-noble
-    display-name: 'Hafnium-Commitlint'
+    display-name: 'Hafnium Commitlint'
     defaults: global
     disabled: false
     concurrent: true
@@ -14,30 +14,39 @@
           num-to-keep: 30
 
     parameters:
-        - string:
-            name: URL
-            description: 'Git URL of the change under test'
-            default: https://review.trustedfirmware.org/hafnium/hafnium
-        - string:
-            name: REFSPEC
-            description: 'Git refspec to fetch'
-            default: +refs/heads/*:refs/remotes/origin/*
-        - string:
-            name: REFNAME
-            description: 'Git refname of the last commit to lint'
-            default: origin/master
-        - string:
-            name: REFNAME_BASE
-            description: 'Base branch ref to compare against'
-            default: origin/master
+      # NOTE:
+      # `GERRIT_BRANCH` is used by the SCM configuration to determine what Jenkins
+      # checks out (and is required for manual runs where Gerrit variables are absent).
+      # `REFNAME_BASE` is used only by the commitlint logic to compute the
+      # merge-base for the commit range.
+      #
+      # Although the defaults often align (master / origin/master), these serve
+      # different purposes and are intentionally kept separate to support manual
+      # runs, backports, and future non-master branches.
+      - string:
+          name: GERRIT_PROJECT
+          description: 'Gerrit project name (repo path)'
+          default: 'hafnium/hafnium'
+      - string:
+          name: GERRIT_BRANCH
+          description: 'Branch used for SCM checkout (independent of commitlint base)'
+          default: 'master'
+      - string:
+          name: GERRIT_REFSPEC
+          description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - string:
+          name: REFNAME_BASE
+          description: 'Base branch ref to compare against'
+          default: 'origin/master'
 
     scm:
         - git:
-            url: ${URL}
-            refspec: ${REFSPEC}
+            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
+            refspec: ${GERRIT_REFSPEC}
             name: origin
             branches:
-                - ${REFNAME}
+                - ${GERRIT_BRANCH}
             skip-tag: true
             depth: 100
             shallow-clone: false
@@ -79,32 +88,35 @@
           set -x
 
           # Ensure all heads (incl. REFNAME_BASE) exist locally.
-          git fetch --no-tags "${URL}" '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --no-tags "https://review.trustedfirmware.org/${GERRIT_PROJECT}" \
+            '+refs/heads/*:refs/remotes/origin/*'
 
-          # Prefer Gerrit-provided refspec on CI; otherwise use the manual REFSPEC.
-          FETCH_SPEC="${REFSPEC}"
-          if [[ -n "${GERRIT_REFSPEC:-}" ]]; then
-            FETCH_SPEC="${GERRIT_REFSPEC}"
-          fi
+          # Select fetch spec:
+          # - CI: use Gerrit-provided GERRIT_REFSPEC
+          # - Manual: use the parameter entered in Jenkins UI
+          FETCH_SPEC="${GERRIT_REFSPEC}"
 
-          # Fetch the exact ref to lint (Gerrit patchset on CI or REFSPEC from
-          # manual run) into FETCH_HEAD, then check out FETCH_HEAD so HEAD points
-          # at the patch tip.
-          git fetch --no-tags "${URL}" "${FETCH_SPEC}"
+          # Fetch the target commit/patchset and check out FETCH_HEAD
+          git fetch --no-tags "https://review.trustedfirmware.org/${GERRIT_PROJECT}" "${FETCH_SPEC}"
           git checkout -qf FETCH_HEAD
 
-          # Range: FROM = merge-base(base, HEAD), TO = HEAD (patch tip)
+          echo "HEAD: $(git rev-parse --short HEAD)"
+          echo "BASE: ${REFNAME_BASE}"
+
+          # Compute merge-base with the base branch
           merge_base="$(git merge-base "${REFNAME_BASE}" HEAD)"
           echo "Computed merge-base: ${merge_base}"
-          echo "Linting commits: ${merge_base}..HEAD"
+
+          echo "Lint range: ${merge_base}..HEAD"
           git log --oneline "${merge_base}..HEAD" || true
 
-          # Nothing ahead of base, so exit successfully (no commits to lint)
+          # If no commits ahead, exit cleanly.
           if [[ "$(git rev-list --count "${merge_base}..HEAD")" -eq 0 ]]; then
-            echo "No new commits to lint (range is empty)."
+            echo "No new commits to lint (range empty)."
             exit 0
           fi
 
+          # Perform commitlint for each commit.
           # Lint the computed range (merge_base..HEAD) using Hafnium's make target.
           # For readability, insert a blank line after each commit's result line.
           make commitlint COMMITLINT_FROM="${merge_base}" COMMITLINT_TO="HEAD" \

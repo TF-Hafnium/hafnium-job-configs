@@ -9,7 +9,22 @@
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium Unit Test builder'
+    display-name: 'Hafnium Unit-Test-Builder'
+
+    # Gerrit-style parameters to allow both CI-triggered and manual runs
+    parameters:
+      - string:
+          name: GERRIT_PROJECT
+          description: 'Gerrit project name (repo path)'
+          default: 'hafnium/hafnium'
+      - string:
+          name: GERRIT_BRANCH
+          description: 'Branch to check out'
+          default: 'master'
+      - string:
+          name: GERRIT_REFSPEC
+          description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}

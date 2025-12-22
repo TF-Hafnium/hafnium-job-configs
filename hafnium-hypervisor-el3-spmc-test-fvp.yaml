@@ -7,17 +7,31 @@
           days-to-keep: 90
           num-to-keep: 90
     parameters:
-        - string:
-            name: FVP_MODEL_ARCHIVE_NAME
-            default: 'FVP_Base_RevC-2xAEMvA_11.27_19_Linux64.tgz'
-        - string:
-            name: FVP_MODEL_URL
-            default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
+      - string:
+          name: GERRIT_PROJECT
+          description: 'Gerrit project name (repo path)'
+          default: 'hafnium/hafnium'
+      - string:
+          name: GERRIT_BRANCH
+          description: 'Branch to check out'
+          default: 'master'
+      - string:
+          name: GERRIT_REFSPEC
+          description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - string:
+          name: FVP_MODEL_ARCHIVE_NAME
+          description: 'FVP model archive name'
+          default: 'FVP_Base_RevC-2xAEMvA_11.27_19_Linux64.tgz'
+      - string:
+          name: FVP_MODEL_URL
+          description: 'FVP model download URL'
+          default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
 
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium-Hypervisor-EL3-SPMC builder (FVP)'
+    display-name: 'Hafnium Hypervisor-EL3-SPMC-Builder(FVP)'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
@@ -62,12 +76,15 @@
 
             set -ex
 
+            # Download and unpack FVP model
             mkdir ${WORKSPACE}/../fvp
             pushd ${WORKSPACE}/../fvp
             wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
+
+            # Build and run EL3 SPMC tests only
             export RUN_EL3_SPMC_ONLY=true
             kokoro/build.sh
     publishers:

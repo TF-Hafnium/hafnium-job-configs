@@ -1,7 +1,7 @@
 - view:
     name: Hafnium
     view-type: list
-    regex: ^hafnium-.*
+    regex: ^hafnium-(?!lts).*
     filter-queue: true
     filter-executors: true
     columns:

@@ -6,20 +6,23 @@
       - build-discarder:
           days-to-keep: 90
           num-to-keep: 90
-#    parameters:
-#        - string:
-#            name: GERRIT_PROJECT
-#            default: 'hafnium/hafnium'
-#        - string:
-#            name: GERRIT_BRANCH
-#            default: 'master'
-#        - string:
-#            name: GERRIT_REFSPEC
-#            default: 'refs/heads/master'
+    parameters:
+      - string:
+          name: GERRIT_PROJECT
+          description: 'Gerrit project name (repo path)'
+          default: 'hafnium/hafnium'
+      - string:
+          name: GERRIT_BRANCH
+          description: 'Branch to check out'
+          default: 'master'
+      - string:
+          name: GERRIT_REFSPEC
+          description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium builder (QEMU)'
+    display-name: 'Hafnium Builder(QEMU)'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}

@@ -8,7 +8,19 @@
           num-to-keep: 90
     disabled: false
     node: docker-amd64-hafnium-noble
+    display-name: 'Hafnium Static-Checks'
     concurrent: true
+    # Gerrit-style parameters to support manual runs
+    parameters:
+      - string:
+          name: GERRIT_PROJECT
+          default: 'hafnium/hafnium'
+      - string:
+          name: GERRIT_BRANCH
+          default: 'master'
+      - string:
+          name: GERRIT_REFSPEC
+          default: '+refs/heads/master:refs/remotes/origin/master'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}

@@ -7,23 +7,34 @@
           days-to-keep: 90
           num-to-keep: 90
     parameters:
-        - string:
-            name: FVP_MODEL_ARCHIVE_NAME
-            default: 'FVP_Base_RevC-2xAEMvA_11.27_19_Linux64.tgz'
-        - string:
-            name: FVP_MODEL_URL
-            default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
-        - string:
-            name: HF_REFSPEC
-            default: '+refs/heads/master:refs/remotes/origin/master'
-        - bool:
-            name: RUN_ASSERT_DISABLED_BUILD
-            description: "Run tests with asserts disabled in addition to the asserts enabled build"
-            default: true
+      - string:
+          name: GERRIT_PROJECT
+          description: 'Gerrit project name (repo path)'
+          default: 'hafnium/hafnium'
+      - string:
+          name: GERRIT_BRANCH
+          description: 'Branch to check out'
+          default: 'master'
+      - string:
+          name: GERRIT_REFSPEC
+          description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
+      - bool:
+          name: RUN_ASSERT_DISABLED_BUILD
+          description: 'Run tests with assertions disabled in addition to enabled build'
+          default: true
+      - string:
+          name: FVP_MODEL_ARCHIVE_NAME
+          description: 'FVP model archive name'
+          default: 'FVP_Base_RevC-2xAEMvA_11.27_19_Linux64.tgz'
+      - string:
+          name: FVP_MODEL_URL
+          description: 'FVP model download URL'
+          default: 'https://developer.arm.com/-/cdn-downloads/permalink/Fixed-Virtual-Platforms/FM-11.27'
     disabled: false
     node: docker-amd64-hafnium-noble
     concurrent: true
-    display-name: 'Hafnium-SPMC builder (FVP)'
+    display-name: 'Hafnium SPMC-Builder(FVP)'
     scm:
         - git:
             url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
@@ -67,12 +78,15 @@
 
             set -ex
 
+            # Download and unpack FVP model
             mkdir ${WORKSPACE}/../fvp
             pushd ${WORKSPACE}/../fvp
             wget ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
             tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
             popd
             PATH=${WORKSPACE}/prebuilts/linux-x64/dtc:$PATH
+
+            # Build and run SPMC tests with assertions enabled
             export RUN_SPMC_ONLY=true
             kokoro/build.sh
 

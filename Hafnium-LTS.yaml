@@ -1,0 +1,14 @@
+- view:
+    name: Hafnium-LTS
+    view-type: list
+    regex: hafnium-lts-.*
+    filter-queue: true
+    filter-executors: true
+    columns:
+        - status
+        - weather
+        - job
+        - last-success
+        - last-failure
+        - last-duration
+        - build-button

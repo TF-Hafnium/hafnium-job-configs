@@ -120,7 +120,21 @@
           ${{WORKSPACE}}/hafnium-ci-scripts/acs/builder.sh
           ${{WORKSPACE}}/hafnium-ci-scripts/acs/runner.sh
     publishers:
-        - archive:
-            artifacts: 'logs/*'
+      - archive:
+          artifacts: 'logs/*'
+      - conditional-publisher:
+          - condition-kind: shell
+            condition-command: |
+              echo "$BUILD_CAUSE" | grep -q TIMERTRIGGER
+            action:
+              - email-ext:
+                  always: true
+                  recipients: "madhukar.pappireddy@arm.com, olivier.deprez@arm.com, daniel.boulby@arm.com, jayanthdodderi.chidanand@arm.com, mahesh.reddybireddy@arm.com"
+                  subject: "Hafnium ACS Weekly Job Status"
+                  body: |
+                    Job: ${{JOB_NAME}}
+                    Build: #${{BUILD_NUMBER}}
+                    Result: ${{BUILD_STATUS}}
+                    URL: ${{BUILD_URL}}
     triggers:
-        - timed: '45 16 * * 1'
+      - timed: '45 16 * * 1'

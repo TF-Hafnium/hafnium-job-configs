@@ -3,7 +3,7 @@
     scm:
       - git:
           url: https://review.trustedfirmware.org/TF-A/trusted-firmware-a
-          refspec: ${TFA_REFSPEC}
+          refspec: ${{TFA_REFSPEC}}
           name: origin
           branches:
               - refs/heads/master
@@ -19,7 +19,7 @@
     scm:
       - git:
           url: https://review.trustedfirmware.org/hafnium/hafnium
-          refspec: ${HF_REFSPEC}
+          refspec: ${{HF_REFSPEC}}
           name: origin
           branches:
             - refs/heads/master
@@ -35,7 +35,7 @@
     scm:
       - git:
           url: https://review.trustedfirmware.org/ci/hafnium-ci-scripts
-          refspec: ${HF_CI_SCRIPT_REFSPEC}
+          refspec: ${{HF_CI_SCRIPT_REFSPEC}}
           name: origin
           branches:
               - refs/heads/master
@@ -49,7 +49,7 @@
     scm:
       - git:
           url: https://github.com/ARM-software/ff-a-acs
-          refspec: ${ACS_REFSPEC}
+          refspec: ${{ACS_REFSPEC}}
           name: origin
           branches:
               - refs/heads/main
@@ -112,13 +112,13 @@
           echo $PATH
           aarch64-none-elf-gcc -v
 
-          mkdir ${WORKSPACE}/../fvp
-          pushd ${WORKSPACE}/../fvp
-          wget -q ${FVP_MODEL_URL}/${FVP_MODEL_ARCHIVE_NAME}
-          tar xvfz ${FVP_MODEL_ARCHIVE_NAME}
+          mkdir ${{WORKSPACE}}/../fvp
+          pushd ${{WORKSPACE}}/../fvp
+          wget -q ${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}
+          tar xvfz ${{FVP_MODEL_ARCHIVE_NAME}}
           popd
-          ${WORKSPACE}/hafnium-ci-scripts/acs/builder.sh
-          ${WORKSPACE}/hafnium-ci-scripts/acs/runner.sh
+          ${{WORKSPACE}}/hafnium-ci-scripts/acs/builder.sh
+          ${{WORKSPACE}}/hafnium-ci-scripts/acs/runner.sh
     publishers:
         - archive:
             artifacts: 'logs/*'

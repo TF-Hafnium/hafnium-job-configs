@@ -34,11 +34,11 @@
 
     scm:
       - git:
-          url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
-          refspec: ${GERRIT_REFSPEC}
+          url: https://review.trustedfirmware.org/${{GERRIT_PROJECT}}
+          refspec: ${{GERRIT_REFSPEC}}
           name: origin
           branches:
-            - ${GERRIT_BRANCH}
+            - ${{GERRIT_BRANCH}}
           skip-tag: true
           shallow-clone: false
           wipe-workspace: true
@@ -70,7 +70,7 @@
           timeout: 30
           fail: true
       - build-name:
-          name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+          name: '#${{BUILD_NUMBER}}-${{GIT_REVISION,length=8}}'
       - workspace-cleanup
       - inject:
           properties-content: |
@@ -85,28 +85,28 @@
           set -x
 
           # 1) Ensure all remote origin/ branches exist
-          git fetch --no-tags "https://review.trustedfirmware.org/${GERRIT_PROJECT}" \
+          git fetch --no-tags "https://review.trustedfirmware.org/${{GERRIT_PROJECT}}" \
             '+refs/heads/*:refs/remotes/origin/*'
 
           # 2) Select correct refspec:
           #  - In Gerrit CI → use GERRIT_REFSPEC injected by Gerrit.
           #  - Manual run   → use the parameter default or user-entered value.
-          FETCH_SPEC="${GERRIT_REFSPEC}"
+          FETCH_SPEC="${{GERRIT_REFSPEC}}"
 
           # 3) Fetch and checkout the target commit/patchset
-          git fetch --no-tags "https://review.trustedfirmware.org/${GERRIT_PROJECT}" "${FETCH_SPEC}"
+          git fetch --no-tags "https://review.trustedfirmware.org/${{GERRIT_PROJECT}}" "${{FETCH_SPEC}}"
           git checkout -qf FETCH_HEAD
 
           echo "HEAD: $(git rev-parse --short HEAD)"
-          echo "BASE: ${REFNAME_BASE}"
+          echo "BASE: ${{REFNAME_BASE}}"
 
           # 4) Find merge-base between HEAD and the base branch
-          merge_base="$(git merge-base "${REFNAME_BASE}" HEAD)"
-          echo "merge-base: ${merge_base}"
+          merge_base="$(git merge-base "${{REFNAME_BASE}}" HEAD)"
+          echo "merge-base: ${{merge_base}}"
 
           # 5) Detect whether any docs/ files changed.
           # Only build if something under docs/ changed.If not, skip the build entirely.
-          if ! git diff --name-only "${merge_base}..HEAD" -- docs/ | grep -q .; then
+          if ! git diff --name-only "${{merge_base}}..HEAD" -- docs/ | grep -q .; then
             echo "[docs] No changes under docs/ - skipping (success)."
             exit 0
           fi

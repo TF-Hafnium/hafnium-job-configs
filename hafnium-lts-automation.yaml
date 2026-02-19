@@ -54,38 +54,38 @@
           set -eux
 
           SANDBOX_RUN="false"
-          REF="${GERRIT_REFNAME:-${UPSTREAM_REFNAME:-}}"
-          echo ${REF} | grep -q "^sandbox/" && SANDBOX_RUN="true" && echo "*** Sandbox run ***"
-          BRANCH="${REF#refs/heads/}"
-          FORKED_TAG=${BRANCH##*-}
-          [ "${SANDBOX_RUN}" = "true" ] && FORKED_TAG="sandbox/${FORKED_TAG}"
-          GERRIT_HOST=${GERRIT_HOST:-review.trustedfirmware.org}
+          REF="${{GERRIT_REFNAME:-${{UPSTREAM_REFNAME:-}}}}"
+          echo ${{REF}} | grep -q "^sandbox/" && SANDBOX_RUN="true" && echo "*** Sandbox run ***"
+          BRANCH="${{REF#refs/heads/}}"
+          FORKED_TAG=${{BRANCH##*-}}
+          [ "${{SANDBOX_RUN}}" = "true" ] && FORKED_TAG="sandbox/${{FORKED_TAG}}"
+          GERRIT_HOST=${{GERRIT_HOST:-review.trustedfirmware.org}}
           SSH_PARAMS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o PubkeyAcceptedKeyTypes=+ssh-rsa"
-          export GIT_SSH_COMMAND="ssh -p 29418 -i $CI_BOT_KEY ${SSH_PARAMS}"
-          GERRIT_SERVER="ssh://${CI_BOT_USERNAME}@${GERRIT_HOST}:29418"
+          export GIT_SSH_COMMAND="ssh -p 29418 -i $CI_BOT_KEY ${{SSH_PARAMS}}"
+          GERRIT_SERVER="ssh://${{CI_BOT_USERNAME}}@${{GERRIT_HOST}}:29418"
 
 
-          if [ -n "${UPSTREAM_REFNAME:-}" ]; then
+          if [ -n "${{UPSTREAM_REFNAME:-}}" ]; then
             # Triggered by tf-a-lts-automation
             echo "Triggered by tf-a-lts-automation"
-            echo "New LTS branch created: ${BRANCH}"
+            echo "New LTS branch created: ${{BRANCH}}"
             MAIN_PROJ="hafnium/hafnium"
-          elif [ "${GERRIT_EVENT_TYPE:-}" = "ref-updated" -a \
-                 "${GERRIT_OLDREV:-}" = "0000000000000000000000000000000000000000" ]; then
+          elif [ "${{GERRIT_EVENT_TYPE:-}}" = "ref-updated" -a \
+                 "${{GERRIT_OLDREV:-}}" = "0000000000000000000000000000000000000000" ]; then
             # Triggered from new LTS branch creation
-            echo "New LTS branch created: ${BRANCH}"
+            echo "New LTS branch created: ${{BRANCH}}"
           else
             echo "Not a new lts-v* branch event; skipping companion trigger."
             exit 0
           fi
 
           _workdir=$(mktemp -d)
-          trap '[ -d "${_workdir}" ] && rm -rf "${_workdir}"' EXIT
-          git -C ${_workdir} init > /dev/null 2>&1
+          trap '[ -d "${{_workdir}}" ] && rm -rf "${{_workdir}}"' EXIT
+          git -C ${{_workdir}} init > /dev/null 2>&1
 
           # Create branch on the sub-modules
-          echo "Create branch ${BRANCH} on the sub-modules"
-          repos="${MAIN_PROJ:-} \
+          echo "Create branch ${{BRANCH}} on the sub-modules"
+          repos="${{MAIN_PROJ:-}} \
                  hafnium/project/reference \
                  hafnium/prebuilts \
                  hafnium/third_party/googletest \
@@ -93,13 +93,13 @@
                  ci/hafnium-ci-scripts \
                  ci/hafnium-job-configs"
 
-          for r in ${repos};
+          for r in ${{repos}};
           do
-              echo "Create branch \"${BRANCH}\" from tag \"${FORKED_TAG}\" in the \"${r}\" project"
-              if ! git ls-remote --exit-code "${GERRIT_SERVER}/${r}" "refs/heads/${BRANCH}" ; then
-                git -C "${_workdir}" fetch ${GERRIT_SERVER}/${r} ${FORKED_TAG} || \
-                (echo "Can not find \"${FORKED_TAG}\" tag on ${r} repository"; exit 1)
-                git -C "${_workdir}" push ${GERRIT_SERVER}/${r} FETCH_HEAD^{commit}:refs/heads/${BRANCH}
+              echo "Create branch \"${{BRANCH}}\" from tag \"${{FORKED_TAG}}\" in the \"${{r}}\" project"
+              if ! git ls-remote --exit-code "${{GERRIT_SERVER}}/${{r}}" "refs/heads/${{BRANCH}}" ; then
+                git -C "${{_workdir}}" fetch ${{GERRIT_SERVER}}/${{r}} ${{FORKED_TAG}} || \
+                (echo "Can not find \"${{FORKED_TAG}}\" tag on ${{r}} repository"; exit 1)
+                git -C "${{_workdir}}" push ${{GERRIT_SERVER}}/${{r}} FETCH_HEAD^{{commit}}:refs/heads/${{BRANCH}}
               fi
           done
 
@@ -109,19 +109,19 @@
               set -eux
 
               COUNTERPART_PROJ="TF-A/trusted-firmware-a"
-              GERRIT_HOST=${GERRIT_HOST:-review.trustedfirmware.org}
-              GERRIT_SERVER="https://${GERRIT_HOST}"
-              REF="${GERRIT_REFNAME:-}"
-              echo ${REF} | grep -q "^sandbox/" && echo "*** Sandbox run ***"
-              BRANCH="${REF#refs/heads/}"
+              GERRIT_HOST=${{GERRIT_HOST:-review.trustedfirmware.org}}
+              GERRIT_SERVER="https://${{GERRIT_HOST}}"
+              REF="${{GERRIT_REFNAME:-}}"
+              echo ${{REF}} | grep -q "^sandbox/" && echo "*** Sandbox run ***"
+              BRANCH="${{REF#refs/heads/}}"
 
               # Must be a Gerrit ref-updated new-branch event
-              [ "${GERRIT_EVENT_TYPE:-}" = "ref-updated" -a \
-                "${GERRIT_OLDREV:-}" = "0000000000000000000000000000000000000000" ] || exit 1
+              [ "${{GERRIT_EVENT_TYPE:-}}" = "ref-updated" -a \
+                "${{GERRIT_OLDREV:-}}" = "0000000000000000000000000000000000000000" ] || exit 1
 
               # Check if branch exists already in TF-A
-              if git ls-remote --exit-code "${GERRIT_SERVER}/${COUNTERPART_PROJ}" "refs/heads/${BRANCH}"; then
-                echo "Branch exists in ${COUNTERPART_PROJ}, do not trigger counterpart"
+              if git ls-remote --exit-code "${{GERRIT_SERVER}}/${{COUNTERPART_PROJ}}" "refs/heads/${{BRANCH}}"; then
+                echo "Branch exists in ${{COUNTERPART_PROJ}}, do not trigger counterpart"
                 exit 1
               fi
               echo "Branch missing, trigger tf-a-lts-automation"
@@ -130,5 +130,4 @@
             - trigger-builds:
                 - project: 'tf-a-lts-automation'
                   block: false
-                  predefined-parameters: "UPSTREAM_REFNAME=${GERRIT_REFNAME}"
-
+                  predefined-parameters: "UPSTREAM_REFNAME=${{GERRIT_REFNAME}}"

@@ -25,11 +25,11 @@
     display-name: 'Hafnium Builder(QEMU)'
     scm:
         - git:
-            url: https://review.trustedfirmware.org/${GERRIT_PROJECT}
-            refspec: ${GERRIT_REFSPEC}
+            url: https://review.trustedfirmware.org/${{GERRIT_PROJECT}}
+            refspec: ${{GERRIT_REFSPEC}}
             name: origin
             branches:
-                - ${GERRIT_BRANCH}
+                - ${{GERRIT_BRANCH}}
             choosing-strategy: gerrit
             skip-tag: true
             shallow-clone: true
@@ -61,7 +61,7 @@
             timeout: 90
             fail: true
         - build-name:
-            name: '#${BUILD_NUMBER}-${GIT_REVISION,length=8}'
+            name: '#${{BUILD_NUMBER}}-${{GIT_REVISION,length=8}}'
     builders:
         - shell: |
             #!/bin/bash

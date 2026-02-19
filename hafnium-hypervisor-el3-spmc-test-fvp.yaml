@@ -60,7 +60,7 @@
                 approval-value: '1'
           projects:
             - project-compare-type: 'PLAIN'
-              project-pattern: 'hafnium/hafnium'
+              project-pattern: "{gerrit_project_prefix}hafnium/hafnium"
               branches:
                 - branch-pattern: 'master'
     wrappers:

@@ -39,7 +39,7 @@
             - ref-updated-event
           projects:
             - project-compare-type: 'PLAIN'
-              project-pattern: 'hafnium/hafnium'
+              project-pattern: "{gerrit_project_prefix}hafnium/hafnium"
               branches:
                 - branch-compare-type: 'REG_EXP'
                   branch-pattern: '^(sandbox/)?lts-v.*$'

@@ -1,0 +1,112 @@
+- job:
+    name: "hafnium-lts-release-mail"
+    node: "docker-amd64-hafnium-noble"
+    project-type: "freestyle"
+    concurrent: true
+    disabled: false
+
+    description: |
+      Render Hafnium LTS release email template.
+
+    properties:
+      - build-discarder:
+          days-to-keep: 365
+          num-to-keep: 50
+
+    parameters:
+      - string:
+          name: "GERRIT_HOST"
+          default: "review.trustedfirmware.org"
+
+      - string:
+          name: "GERRIT_PROJECT"
+          default: "{gerrit_project_prefix}hafnium/hafnium"
+
+          description: |
+            Hafnium Git project
+
+      - string:
+          name: "GERRIT_BRANCH"
+          default: "lts-v2.14"
+
+          description: |
+            Git branch (e.g. lts-v2.14) to search for the latest tag in case of --latest is used for RELEASE_TAG
+
+      - string:
+          name: "RELEASE_TAG"
+          default: "--latest"
+
+          description: |
+            Release git tag, e.g. 'lts-v2.14.1', or '--latest' to get latest tag in GERRIT_BRANCH
+
+      - string:
+          name: "CI_SCRIPTS_URL"
+          default: "https://git.trustedfirmware.org/{gerrit_project_prefix}ci/hafnium-ci-scripts.git"
+
+          description: |
+            URL of the hafnium-ci-scripts repository to clone.
+
+      - bool:
+          name: "SANDBOX_RUN"
+          default: true
+
+          description: |
+            Run sandbox simulation of a release. Uncheck this only after
+            running simulation and checking that everything is correct!
+
+    wrappers:
+      - "timestamps"
+
+      - timeout:
+          timeout: 5
+          fail: true
+
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -ex
+
+          git clone "$CI_SCRIPTS_URL"
+          ./hafnium-ci-scripts/lts/lts-release-mail.py --url https://${{GERRIT_HOST}}/${{GERRIT_PROJECT}} --branch "${{GERRIT_BRANCH}}" ${{RELEASE_TAG}} >email.txt
+
+          if [ ! -s email.txt ]; then
+              echo "No changes found. Removing email.txt to prevent sending email."
+              rm email.txt
+              exit 0
+          fi
+
+          awk -F": " '/Subject:/ {{print $2}}' email.txt >subject.txt
+          # Remove email headers, put in a separate file.
+          sed '0,/^$/d' email.txt >body.txt
+
+          if [ "$SANDBOX_RUN" == "true" ]; then
+              echo "arthur.she@linaro.org, madhukar.pappireddy@arm.com, bipin.ravi@arm.com, olivier.deprez@arm.com" >recipients.txt
+              echo -n "[SANDBOX] " | cat - subject.txt > subject.txt.tmp
+              mv subject.txt.tmp subject.txt
+          else
+              echo "hafnium@lists.trustedfirmware.org, tfa-lts@lists.trustedfirmware.org" >recipients.txt
+          fi
+
+          set +x
+          echo "======================================================================="
+          cat email.txt
+          echo "======================================================================="
+
+    publishers:
+      - archive:
+          artifacts: "email.txt"
+          latest-only: false
+          allow-empty: true
+
+      - conditional-publisher:
+          - condition-kind: "file-exists"
+            on-evaluation-failure: "dont-run"
+            condition-filename: "email.txt"
+            condition-basedir: "workspace"
+
+            action:
+              - email-ext:
+                  always: true
+                  subject: '${{FILE, path="subject.txt"}}'
+                  body: '${{FILE, path="body.txt"}}'
+                  recipients: '${{FILE, path="recipients.txt"}}'

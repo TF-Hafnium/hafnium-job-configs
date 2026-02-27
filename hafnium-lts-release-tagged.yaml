@@ -1,0 +1,64 @@
+- job:
+    name: "hafnium-lts-release-tagged"
+    node: "docker-amd64-hafnium-noble"
+    project-type: "freestyle"
+    concurrent: false
+    disabled: false
+    description: "Triggers when a new Hafnium LTS release is tagged"
+
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          num-to-keep: 60
+
+    triggers:
+      - gerrit:
+          server-name: "review.trustedfirmware.org"
+
+          projects:
+            - branches:
+                - branch-compare-type: "REG_EXP"
+                  branch-pattern: "refs/tags/lts-v.*"
+
+                - branch-compare-type: "REG_EXP"
+                  branch-pattern: "refs/tags/sandbox/lts-v.*"
+
+              project-compare-type: "PLAIN"
+              project-pattern: "{gerrit_project_prefix}hafnium/hafnium"
+
+          trigger-on:
+            - "ref-updated-event"
+
+    wrappers:
+      - "timestamps"
+
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -ex
+          env | grep GERRIT
+          if ! echo $GERRIT_REFNAME | grep -q -E ^refs/tags/; then
+              echo Not a tag event
+              exit
+          fi
+          echo "RELEASE_TAG=${{GERRIT_REFNAME#refs/tags/}}" >subjob.param
+          if echo ${{GERRIT_REFNAME}} | grep -q "sandbox/"; then
+              echo "SANDBOX_RUN=true" >>subjob.param
+          else
+              echo "SANDBOX_RUN=false" >>subjob.param
+          fi
+
+      - conditional-step:
+          condition-kind: "file-exists"
+          on-evaluation-failure: "dont-run"
+          condition-filename: "subjob.param"
+          condition-basedir: "workspace"
+
+          steps:
+            - trigger-builds:
+                - project:
+                    - "hafnium-lts-release-mail"
+
+                  block: true
+                  current-parameters: true
+                  property-file: "subjob.param"

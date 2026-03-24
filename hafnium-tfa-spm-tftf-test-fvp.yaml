@@ -1,0 +1,169 @@
+- job:
+    name: hafnium-tfa-spm-tftf-test-fvp
+    project-type: freestyle
+    defaults: global
+    properties:
+      - build-discarder:
+          days-to-keep: 90
+          num-to-keep: 90
+    disabled: false
+    node: docker-amd64-hafnium-noble
+    concurrent: true
+    display-name: 'Hafnium TF-A SPM Tests (FVP)'
+
+    # Gerrit-style parameters to allow both CI-triggered and manual runs
+    parameters:
+      - string:
+          name: HAF_GERRIT_PROJECT
+          description: 'Gerrit project name (repo path)'
+          default: 'hafnium/hafnium'
+      - string:
+          name: HAF_GERRIT_BRANCH
+          description: 'Branch to check out'
+          default: 'master'
+      - string:
+          name: HAF_GERRIT_REFSPEC
+          description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
+
+      - string:
+          name: TFA_GERRIT_PROJECT
+          description: 'TF-A Gerrit project name (repo path)'
+          default: 'TF-A/trusted-firmware-a'
+      - string:
+          name: TFA_GERRIT_BRANCH
+          description: 'TF-A branch to check out'
+          default: 'master'
+      - string:
+          name: TFA_GERRIT_REFSPEC
+          description: 'TF-A Gerrit refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
+
+      - string:
+          name: TFTF_GERRIT_PROJECT
+          description: 'TF-A-Tests Gerrit project name (repo path)'
+          default: 'TF-A/tf-a-tests'
+      - string:
+          name: TFTF_GERRIT_BRANCH
+          description: 'TF-A-Tests branch to check out'
+          default: 'master'
+      - string:
+          name: TFTF_GERRIT_REFSPEC
+          description: 'TF-A-Tests Gerrit refspec to fetch (Gerrit patchset or manual refspec)'
+          default: '+refs/heads/master:refs/remotes/origin/master'
+
+      - string:
+          name: FVP_MODEL_ARCHIVE_NAME
+          description: 'FVP model archive name'
+          default: 'FVP_Base_RevC_AEMvA_11.31_28_Linux_x86.tar.gz'
+
+      - string:
+          name: FVP_MODEL_URL
+          description: 'FVP model download URL'
+          default: 'https://developer.arm.com/-/cdn-downloads/permalink/FVPs-Architecture/FM-11.31'
+
+    scm:
+      - git:
+          url: https://review.trustedfirmware.org/${{HAF_GERRIT_PROJECT}}
+          refspec: ${{HAF_GERRIT_REFSPEC}}
+          name: origin
+          branches:
+            - ${{HAF_GERRIT_BRANCH}}
+          choosing-strategy: gerrit
+          skip-tag: true
+          shallow-clone: true
+          wipe-workspace: false
+          submodule:
+            recursive: true
+
+    triggers:
+      - gerrit:
+          server-name: 'review.trustedfirmware.org'
+          override-votes: true
+          gerrit-build-successful-verified-value: 1
+          gerrit-build-failed-verified-value: -1
+          gerrit-build-successful-codereview-value: 0
+          gerrit-build-failed-codereview-value: 0
+          trigger-on:
+            - comment-added-event:
+                approval-category: 'Allow-CI'
+                approval-value: '1'
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: "{gerrit_project_prefix}hafnium/hafnium"
+              branches:
+                - branch-pattern: 'master'
+
+    wrappers:
+      - timestamps
+      - timeout:
+          timeout: 120
+          fail: true
+      - build-name:
+          name: '#${{BUILD_NUMBER}}-${{GIT_REVISION,length=8}}'
+
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -euo pipefail
+
+          mkdir -p "${{WORKSPACE}}/../fvp"
+          pushd "${{WORKSPACE}}/../fvp"
+          wget -q "${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}"
+          FVP_EXTRACT_DIR=$(basename `tar tf ${{FVP_MODEL_ARCHIVE_NAME}}|head -n 1`)
+          tar xvfz "${{FVP_MODEL_ARCHIVE_NAME}}"
+          popd
+
+          PATH="${{WORKSPACE}}/prebuilts/linux-x64/dtc:${{PATH}}"
+          export PATH="${{WORKSPACE}}/../fvp/${{FVP_EXTRACT_DIR}}/bin:${{PATH}}"
+
+          pushd "${{WORKSPACE}}/.."
+
+          # Ensure TF-A checkout exists
+          if [ ! -d trusted-firmware-a/.git ]; then
+            git clone "https://review.trustedfirmware.org/${{TFA_GERRIT_PROJECT}}" trusted-firmware-a
+          fi
+
+          # Move TF-A checkout to requested revision
+          pushd "${{WORKSPACE}}/../trusted-firmware-a"
+          git fetch origin "${{TFA_GERRIT_REFSPEC}}"
+          git checkout -f FETCH_HEAD
+          git submodule update --init --recursive
+          popd
+
+          # Ensure TFTF checkout exists
+          if [ ! -d tf-a-tests/.git ]; then
+            git clone "https://review.trustedfirmware.org/${{TFTF_GERRIT_PROJECT}}" tf-a-tests
+          fi
+
+          # Move TFTF checkout to requested revision
+          pushd "${{WORKSPACE}}/../tf-a-tests"
+          git fetch origin "${{TFTF_GERRIT_REFSPEC}}"
+          git checkout -f FETCH_HEAD
+          git submodule update --init --recursive
+          popd
+
+          export HAFNIUM_SRC="${{WORKSPACE}}"
+          export TFA_SRC="${{WORKSPACE}}/../trusted-firmware-a"
+          export TFTF_SRC="${{WORKSPACE}}/../tf-a-tests"
+
+          # Use a writable HOME for TF-A tooling invoked through Poetry.
+          export HOME=/tmp
+
+          chmod +x "${{WORKSPACE}}/tools/shrinkwrap/configs/tfa-ci/run_spmc_tftf_tests.sh"
+
+          result=0
+
+          echo
+          echo "###############################################################"
+          echo "TEST GROUP: SPMC L2 BOOT TESTS"
+          echo "###############################################################"
+          "${{WORKSPACE}}/tools/shrinkwrap/configs/tfa-ci/run_spmc_tftf_tests.sh" \
+          hafnium-tftf-base.yaml \
+          spmc-tftf-tests || result=1
+
+          exit "${{result}}"
+
+    publishers:
+      - archive:
+          artifacts: 'out/package/**'

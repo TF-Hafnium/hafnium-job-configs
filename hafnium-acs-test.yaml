@@ -65,6 +65,7 @@
     description: ACS compliance tests for Hafnium
     node: docker-amd64-hafnium-noble
     concurrent: true
+    disabled: "{obj:jenkins_site_is_staging}"
     display-name: 'Hafnium ACS build and test'
     properties:
       - build-discarder:

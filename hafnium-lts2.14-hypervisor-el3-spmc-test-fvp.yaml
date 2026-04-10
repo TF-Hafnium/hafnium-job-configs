@@ -64,9 +64,14 @@
 
             mkdir ${{WORKSPACE}}/../fvp
             pushd ${{WORKSPACE}}/../fvp
-            wget ${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}
-            tar xvfz ${{FVP_MODEL_ARCHIVE_NAME}}
+            wget -q ${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}
+            FVP_EXTRACT_DIR=$(basename `tar tf ${{FVP_MODEL_ARCHIVE_NAME}}|head -n 1`)
+            tar xfz ${{FVP_MODEL_ARCHIVE_NAME}}
             popd
+
+            # Export FVP model binary path used by hftest.py
+            export HAFNIUM_FVP=${{WORKSPACE}}/../fvp/${{FVP_EXTRACT_DIR}}/bin/FVP_Base_RevC-2xAEMvA
+
             PATH=${{WORKSPACE}}/prebuilts/linux-x64/dtc:$PATH
             export RUN_EL3_SPMC_ONLY=true
             kokoro/build.sh

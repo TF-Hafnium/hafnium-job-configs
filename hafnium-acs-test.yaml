@@ -120,7 +120,7 @@
           tar xfz ${{FVP_MODEL_ARCHIVE_NAME}}
           popd
 
-          # Export FVP model binary path used by hftest.py
+          # Export FVP model binary path used by acs/runner.sh
           export HAFNIUM_FVP=${{WORKSPACE}}/../fvp/${{FVP_EXTRACT_DIR}}/bin/FVP_Base_RevC-2xAEMvA
 
           ${{WORKSPACE}}/hafnium-ci-scripts/acs/builder.sh

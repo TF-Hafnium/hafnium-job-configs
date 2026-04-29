@@ -14,15 +14,15 @@
     # Gerrit-style parameters to allow both CI-triggered and manual runs
     parameters:
       - string:
-          name: HAF_GERRIT_PROJECT
+          name: GERRIT_PROJECT
           description: 'Gerrit project name (repo path)'
           default: 'hafnium/hafnium'
       - string:
-          name: HAF_GERRIT_BRANCH
+          name: GERRIT_BRANCH
           description: 'Branch to check out'
           default: 'master'
       - string:
-          name: HAF_GERRIT_REFSPEC
+          name: GERRIT_REFSPEC
           description: 'Git refspec to fetch (Gerrit patchset or manual refspec)'
           default: '+refs/heads/master:refs/remotes/origin/master'
 
@@ -64,11 +64,11 @@
 
     scm:
       - git:
-          url: https://review.trustedfirmware.org/${{HAF_GERRIT_PROJECT}}
-          refspec: ${{HAF_GERRIT_REFSPEC}}
+          url: https://review.trustedfirmware.org/${{GERRIT_PROJECT}}
+          refspec: ${{GERRIT_REFSPEC}}
           name: origin
           branches:
-            - ${{HAF_GERRIT_BRANCH}}
+            - ${{GERRIT_BRANCH}}
           choosing-strategy: gerrit
           skip-tag: true
           shallow-clone: true

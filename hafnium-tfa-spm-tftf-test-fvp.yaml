@@ -55,12 +55,12 @@
       - string:
           name: FVP_MODEL_ARCHIVE_NAME
           description: 'FVP model archive name'
-          default: 'FVP_Base_RevC_AEMvA_11.31_28_Linux_x86.tar.gz'
+          default: 'FVP_Base_RevC_AEMvA_11.32_19_Linux_x86.tar.gz'
 
       - string:
           name: FVP_MODEL_URL
           description: 'FVP model download URL'
-          default: 'https://developer.arm.com/-/cdn-downloads/permalink/FVPs-Architecture/FM-11.31'
+          default: 'https://developer.arm.com/-/cdn-downloads/permalink/FVPs-Architecture/FM-11.32'
 
     scm:
       - git:
@@ -107,15 +107,26 @@
           #!/bin/bash
           set -euo pipefail
 
-          mkdir -p "${{WORKSPACE}}/../fvp"
-          pushd "${{WORKSPACE}}/../fvp"
-          wget -q "${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}"
-          FVP_EXTRACT_DIR=$(basename `tar tf ${{FVP_MODEL_ARCHIVE_NAME}}|head -n 1`)
-          tar xvfz "${{FVP_MODEL_ARCHIVE_NAME}}"
+          # Download, unpack and install FVP model
+          mkdir -p ${{WORKSPACE}}/../fvp
+          pushd ${{WORKSPACE}}/../fvp
+
+          wget -q ${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}
+
+          tar xfz ${{FVP_MODEL_ARCHIVE_NAME}}
+
+          FVP_INSTALLER=${{FVP_MODEL_ARCHIVE_NAME%.tar.gz}}.sh
+          FVP_INSTALL_DIR=${{WORKSPACE}}/../fvp/FVP_Base_RevC_AEMvA_11.32_19
+
+          ./${{FVP_INSTALLER}} \
+            --i-agree-to-the-contained-eula \
+            --no-interactive \
+            --destination ${{FVP_INSTALL_DIR}}
+
           popd
 
           PATH="${{WORKSPACE}}/prebuilts/linux-x64/dtc:${{PATH}}"
-          export PATH="${{WORKSPACE}}/../fvp/${{FVP_EXTRACT_DIR}}/bin:${{PATH}}"
+          export PATH="${{FVP_INSTALL_DIR}}/bin:${{PATH}}"
 
           pushd "${{WORKSPACE}}/.."
 

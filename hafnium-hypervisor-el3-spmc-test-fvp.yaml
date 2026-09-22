@@ -22,11 +22,11 @@
       - string:
           name: FVP_MODEL_ARCHIVE_NAME
           description: 'FVP model archive name'
-          default: 'FVP_Base_RevC_AEMvA_11.31_28_Linux_x86.tar.gz'
+          default: 'FVP_Base_RevC_AEMvA_11.32_19_Linux_x86.tar.gz'
       - string:
           name: FVP_MODEL_URL
           description: 'FVP model download URL'
-          default: 'https://developer.arm.com/-/cdn-downloads/permalink/FVPs-Architecture/FM-11.31'
+          default: 'https://developer.arm.com/-/cdn-downloads/permalink/FVPs-Architecture/FM-11.32'
 
     disabled: false
     node: docker-amd64-hafnium-noble
@@ -76,16 +76,26 @@
 
             set -ex
 
-            # Download and unpack FVP model
-            mkdir ${{WORKSPACE}}/../fvp
+            # Download, unpack and install FVP model
+            mkdir -p ${{WORKSPACE}}/../fvp
             pushd ${{WORKSPACE}}/../fvp
+
             wget -q ${{FVP_MODEL_URL}}/${{FVP_MODEL_ARCHIVE_NAME}}
-            FVP_EXTRACT_DIR=$(basename `tar tf ${{FVP_MODEL_ARCHIVE_NAME}}|head -n 1`)
+
             tar xfz ${{FVP_MODEL_ARCHIVE_NAME}}
+
+            FVP_INSTALLER=${{FVP_MODEL_ARCHIVE_NAME%.tar.gz}}.sh
+            FVP_INSTALL_DIR=${{WORKSPACE}}/../fvp/FVP_Base_RevC_AEMvA_11.32_19
+
+            ./${{FVP_INSTALLER}} \
+                --i-agree-to-the-contained-eula \
+                --no-interactive \
+                --destination ${{FVP_INSTALL_DIR}}
+
             popd
 
             # Export FVP model binary path used by hftest.py
-            export HAFNIUM_FVP=${{WORKSPACE}}/../fvp/${{FVP_EXTRACT_DIR}}/bin/FVP_Base_RevC-2xAEMvA
+            export HAFNIUM_FVP=${{FVP_INSTALL_DIR}}/bin/FVP_Base_RevC-2xAEMvA
 
             PATH=${{WORKSPACE}}/prebuilts/linux-x64/dtc:$PATH
 

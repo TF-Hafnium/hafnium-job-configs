@@ -146,7 +146,7 @@
             action:
               - email-ext:
                   always: true
-                  recipients: "madhukar.pappireddy@arm.com, olivier.deprez@arm.com, daniel.boulby@arm.com, jayanthdodderi.chidanand@arm.com, mahesh.reddybireddy@arm.com"
+                  recipients: "manish.badarkhe@arm.com, olivier.deprez@arm.com, jayanthdodderi.chidanand@arm.com, mahesh.reddybireddy@arm.com"
                   subject: "Hafnium ACS Weekly Job Status"
                   body: |
                     Job: ${{JOB_NAME}}

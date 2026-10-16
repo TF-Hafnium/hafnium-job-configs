@@ -80,7 +80,7 @@
                   artifacts: '*.csv'
               - email-ext:
                   always: true
-                  recipients: arthur.she@linaro.org, madhukar.pappireddy@arm.com, bipin.ravi@arm.com, vwadekar@nvidia.com, joanna.farley@arm.com, lauren.wehrmeister@arm.com, yann.gautier@st.com, jidong@google.com, olivier.deprez@arm.com, Govindraj.Raja@arm.com
+                  recipients: arthur.she@linaro.org, manish.badarkhe@arm.com, vwadekar@nvidia.com, joanna.farley@arm.com, yann.gautier@st.com, jamiefox@google.com, olivier.deprez@arm.com
                   subject: Hafnium LTS Triage report
                   body: Attached is the CSV report from the Hafnium LTS Triage job this week.
                   attachments: '*.csv'

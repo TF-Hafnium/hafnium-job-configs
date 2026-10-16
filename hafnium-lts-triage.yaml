@@ -6,7 +6,7 @@
     disabled: false
     defaults: global
     description: |
-      Generate LTS triage report every Friday
+      Generate LTS triage report every Thursday
     properties:
       - build-discarder:
           days-to-keep: 45
@@ -30,7 +30,7 @@
           skip-tag: true
           wipe-workspace: true
     triggers:
-      - timed: H 5 * * 5 # Run the job at 00:00 every Friday @CTS timezone
+      - timed: H 5 * * 4 # Run the job at 00:00 every Thursday @CTS timezone
     wrappers:
       - timestamps
       - timeout:
